@@ -1,0 +1,479 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { db, storage } from '@/lib/firebase'
+import {
+    collection,
+    getDocs,
+    orderBy,
+    query,
+    doc,
+    updateDoc,
+    deleteDoc,
+    arrayUnion,
+} from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { FaTrash, FaEdit, FaChevronDown } from 'react-icons/fa'
+
+export default function OrdersListPage() {
+    const [orders, setOrders] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [editingId, setEditingId] = useState(null)
+    const [editForm, setEditForm] = useState({})
+    const [expandedHistory, setExpandedHistory] = useState({})
+
+    // New states to hold selected files during editing
+    const [editImageFile, setEditImageFile] = useState(null)
+    const [editBillFile, setEditBillFile] = useState(null)
+
+    const statuses = [
+        'pending',
+        'packed',
+        'not packed',
+        'out for delivery',
+        'delivered',
+    ]
+
+    useEffect(() => {
+        fetchOrders()
+    }, [])
+
+    const fetchOrders = async () => {
+        setLoading(true)
+        try {
+            const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
+            const snapshot = await getDocs(q)
+            const list = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }))
+            setOrders(list)
+        } catch (err) {
+            console.error('Error fetching orders:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const updateStatus = async (orderId, newStatus, updatedBy = 'admin') => {
+        try {
+            const orderRef = doc(db, 'orders', orderId)
+            await updateDoc(orderRef, {
+                status: newStatus,
+                statusHistory: arrayUnion({
+                    status: newStatus,
+                    updatedAt: new Date(),
+                    updatedBy,
+                }),
+            })
+
+            setOrders((prev) =>
+                prev.map((o) =>
+                    o.id === orderId
+                        ? {
+                            ...o,
+                            status: newStatus,
+                            statusHistory: [
+                                ...(o.statusHistory || []),
+                                { status: newStatus, updatedAt: new Date(), updatedBy },
+                            ],
+                        }
+                        : o
+                )
+            )
+        } catch (err) {
+            console.error('Failed to update status:', err)
+            alert('Failed to update status')
+        }
+    }
+
+    const startEdit = (order) => {
+        setEditingId(order.id)
+        setEditForm({
+            customerName: order.customerName || '',
+            address: order.address || '',
+            phone: order.phone || '',
+            storeId: order.storeId || '',
+            deliveryPartnerId: order.deliveryPartnerId || '',
+        })
+        setEditImageFile(null)
+        setEditBillFile(null)
+    }
+
+    const cancelEdit = () => {
+        setEditingId(null)
+        setEditForm({})
+        setEditImageFile(null)
+        setEditBillFile(null)
+    }
+
+    const handleEditChange = (e) => {
+        setEditForm({ ...editForm, [e.target.name]: e.target.value })
+    }
+
+    const saveEdit = async (orderId) => {
+        try {
+            const orderRef = doc(db, 'orders', orderId)
+
+            // Upload new grocery image if selected
+            let groceryListImageUrl = null
+            if (editImageFile) {
+                const imageRef = ref(storage, `orders/${orderId}-grocery.jpg`)
+                await uploadBytes(imageRef, editImageFile)
+                groceryListImageUrl = await getDownloadURL(imageRef)
+            }
+
+            // Upload new bill PDF if selected
+            let billPdfUrl = null
+            if (editBillFile) {
+                const billRef = ref(storage, `orders/${orderId}-bill.pdf`)
+                await uploadBytes(billRef, editBillFile)
+                billPdfUrl = await getDownloadURL(billRef)
+            }
+
+            // Prepare update data object
+            const updateData = { ...editForm }
+            if (groceryListImageUrl !== null) updateData.groceryListImageUrl = groceryListImageUrl
+            if (billPdfUrl !== null) updateData.billPdfUrl = billPdfUrl
+
+            await updateDoc(orderRef, updateData)
+
+            setOrders((prev) =>
+                prev.map((o) =>
+                    o.id === orderId ? { ...o, ...updateData } : o
+                )
+            )
+
+            setEditingId(null)
+            setEditForm({})
+            setEditImageFile(null)
+            setEditBillFile(null)
+            alert('Order updated successfully')
+        } catch (err) {
+            console.error('Failed to update order:', err)
+            alert('Failed to update order')
+        }
+    }
+
+    const toggleHistory = (id) => {
+        setExpandedHistory((prev) => ({ ...prev, [id]: !prev[id] }))
+    }
+
+    const deleteOrder = async (orderId) => {
+        if (confirm('Are you sure you want to delete this order?')) {
+            try {
+                await deleteDoc(doc(db, 'orders', orderId))
+                setOrders((prev) => prev.filter((o) => o.id !== orderId))
+            } catch (err) {
+                console.error('Failed to delete order:', err)
+                alert('Failed to delete order')
+            }
+        }
+    }
+
+    const getStatusButtonClass = (status) => {
+        let btnColor = ''
+        switch (status) {
+            case 'pending':
+                btnColor = 'bg-yellow-500 text-black hover:bg-yellow-600'
+                break
+            case 'packed':
+                btnColor = 'bg-blue-600 text-white hover:bg-blue-700'
+                break
+            case 'not packed':
+                btnColor = 'bg-red-600 text-white hover:bg-red-700'
+                break
+            case 'out for delivery':
+                btnColor = 'bg-orange-500 text-black hover:bg-orange-600'
+                break
+            case 'delivered':
+                btnColor = 'bg-green-600 text-white hover:bg-green-700'
+                break
+            default:
+                btnColor = 'bg-gray-600 text-white hover:bg-gray-700'
+        }
+        return btnColor
+    }
+
+    return (
+        <div className="p-8 max-w-6xl mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
+            <nav className="mb-6 text-gray-400 text-sm" aria-label="Breadcrumb">
+                <ol className="list-reset flex">
+                    <li>
+                        <Link href="/" className="text-blue-400 hover:text-blue-500 underline">
+                            Home
+                        </Link>
+                    </li>
+                    <li>
+                        <span className="mx-2">›</span>
+                    </li>
+                    <li className="text-gray-300" aria-current="page">
+                        All Orders
+                    </li>
+                </ol>
+            </nav>
+
+            <h1 className="text-3xl font-bold mb-8">All Orders</h1>
+
+            {loading ? (
+                <p>Loading orders...</p>
+            ) : orders.length === 0 ? (
+                <p>No orders found.</p>
+            ) : (
+                <div className="space-y-6">
+                    {orders.map((order) => (
+                        <div
+                            key={order.id}
+                            className="relative border border-gray-700 rounded-lg p-6 shadow bg-gray-800"
+                        >
+                            <div className="absolute top-3 right-3 flex space-x-3">
+                                <button
+                                    onClick={() => startEdit(order)}
+                                    title="Edit Order"
+                                    className="p-2 rounded bg-indigo-600 hover:bg-indigo-700 transition text-white"
+                                >
+                                    <FaEdit />
+                                </button>
+                                <button
+                                    onClick={() => deleteOrder(order.id)}
+                                    title="Delete Order"
+                                    className="p-2 rounded bg-red-600 hover:bg-red-700 transition text-white"
+                                >
+                                    <FaTrash />
+                                </button>
+                            </div>
+
+                            <p className="mb-2">
+                                <strong>Order ID:</strong> {order.orderId}
+                            </p>
+
+                            {editingId === order.id ? (
+                                <>
+                                    {/* Existing input fields */}
+                                    {[
+                                        'customerName',
+                                        'address',
+                                        'phone',
+                                        'storeId',
+                                        'deliveryPartnerId',
+                                    ].map((field) => (
+                                        <input
+                                            key={field}
+                                            name={field}
+                                            value={editForm[field]}
+                                            onChange={handleEditChange}
+                                            className="border border-gray-600 rounded bg-gray-700 px-3 py-2 my-1 w-full text-gray-100 placeholder-gray-400"
+                                            placeholder={field
+                                                .replace(/([A-Z])/g, ' $1')
+                                                .replace(/^./, (str) => str.toUpperCase())}
+                                        />
+                                    ))}
+
+                                    {/* Grocery List Image file input */}
+                                    <div className="mt-4">
+                                        <label className="block mb-1 font-semibold">Grocery List Photo (image):</label>
+                                        <div className="flex items-center gap-4">
+                                            <label
+                                                htmlFor="edit-grocery-image"
+                                                className="cursor-pointer bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white font-medium select-none transition"
+                                            >
+                                                Choose Image
+                                            </label>
+                                            <input
+                                                id="edit-grocery-image"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => setEditImageFile(e.target.files?.[0] || null)}
+                                                className="hidden"
+                                            />
+                                            <span className="text-gray-300 italic">
+                                                {editImageFile
+                                                    ? editImageFile.name
+                                                    : order.groceryListImageUrl
+                                                        ? 'Existing image retained'
+                                                        : 'No file chosen'}
+                                            </span>
+                                        </div>
+                                        {/* Show existing image button */}
+                                        {order.groceryListImageUrl && !editImageFile && (
+                                            <button
+                                                type="button"
+                                                onClick={() => window.open(order.groceryListImageUrl, '_blank')}
+                                                className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                                            >
+                                                View Current Grocery List Image
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Bill PDF file input */}
+                                    <div className="mt-4">
+                                        <label className="block mb-1 font-semibold">Order Bill (PDF):</label>
+                                        <div className="flex items-center gap-4">
+                                            <label
+                                                htmlFor="edit-bill-pdf"
+                                                className="cursor-pointer bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white font-medium select-none transition"
+                                            >
+                                                Choose PDF
+                                            </label>
+                                            <input
+                                                id="edit-bill-pdf"
+                                                type="file"
+                                                accept="application/pdf"
+                                                onChange={(e) => setEditBillFile(e.target.files?.[0] || null)}
+                                                className="hidden"
+                                            />
+                                            <span className="text-gray-300 italic">
+                                                {editBillFile
+                                                    ? editBillFile.name
+                                                    : order.billPdfUrl
+                                                        ? 'Existing PDF retained'
+                                                        : 'No file chosen'}
+                                            </span>
+                                        </div>
+                                        {/* Show existing bill PDF button */}
+                                        {order.billPdfUrl && !editBillFile && (
+                                            <button
+                                                type="button"
+                                                onClick={() => window.open(order.billPdfUrl, '_blank')}
+                                                className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                                            >
+                                                View Current Bill PDF
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-6 flex space-x-4">
+                                        <button
+                                            onClick={() => saveEdit(order.id)}
+                                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                                        >
+                                            Save
+                                        </button>
+                                        <button
+                                            onClick={cancelEdit}
+                                            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p>
+                                        <strong>Customer Name:</strong> {order.customerName}
+                                    </p>
+                                    <p>
+                                        <strong>Address:</strong> {order.address}
+                                    </p>
+                                    <p>
+                                        <strong>Phone:</strong> {order.phone}
+                                    </p>
+                                    <p>
+                                        <strong>Store ID:</strong> {order.storeId}
+                                    </p>
+                                    <p>
+                                        <strong>Delivery Partner ID:</strong> {order.deliveryPartnerId}
+                                    </p>
+
+                                    {/* Show grocery list image button if exists */}
+                                    {order.groceryListImageUrl && (
+                                        <button
+                                            onClick={() => window.open(order.groceryListImageUrl, '_blank')}
+                                            className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                                        >
+                                            View Grocery List Image
+                                        </button>
+                                    )}
+
+                                    {/* Show bill PDF button if exists */}
+                                    {order.billPdfUrl && (
+                                        <button
+                                            onClick={() => window.open(order.billPdfUrl, '_blank')}
+                                            className="mt-2 ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                                        >
+                                            View Bill PDF
+                                        </button>
+                                    )}
+
+                                    <div className="mt-4">
+                                        <p>
+                                            <strong>Status:</strong>{' '}
+                                            <span
+                                                className={`inline-block px-3 py-1 rounded text-sm font-semibold ${getStatusButtonClass(
+                                                    order.status
+                                                )}`}
+                                            >
+                                                {order.status.charAt(0).toUpperCase()+ order.status.slice(1)}
+                                            </span>
+                                        </p>
+
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                  {statuses
+                    .filter((s) => s !== order.status)
+                    .map((s) => {
+                      let btnColor = ''
+                      switch (s) {
+                        case 'pending':
+                          btnColor = 'bg-yellow-500 text-black hover:bg-yellow-600'
+                          break
+                        case 'packed':
+                          btnColor = 'bg-blue-600 text-white hover:bg-blue-700'
+                          break
+                        case 'not packed':
+                          btnColor = 'bg-red-600 text-white hover:bg-red-700'
+                          break
+                        case 'out for delivery':
+                          btnColor = 'bg-orange-500 text-black hover:bg-orange-600'
+                          break
+                        case 'delivered':
+                          btnColor = 'bg-green-600 text-white hover:bg-green-700'
+                          break
+                        default:
+                          btnColor = 'bg-gray-600 text-white hover:bg-gray-700'
+                      }
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => updateStatus(order.id, s)}
+                          className={`px-3 py-1 rounded text-sm font-semibold ${btnColor}`}
+                        >
+                          Mark as {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </button>
+                      )
+                    })}
+                </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => toggleHistory(order.id)}
+                                        className="mt-4 flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-gray-200"
+                                    >
+                                        Status History
+                                        <FaChevronDown
+                                            className={`transition-transform ${expandedHistory[order.id] ? 'rotate-180' : ''
+                                                }`}
+                                        />
+                                    </button>
+
+                                    {expandedHistory[order.id] && (
+                                        <ul className="mt-2 text-sm max-h-40 overflow-auto space-y-1 border border-gray-700 rounded p-2 bg-gray-900">
+                                            {(order.statusHistory || []).map((h, i) => (
+                                                <li key={i}>
+                                                    <strong>{h.status}</strong> —{' '}
+                                                    {new Date(h.updatedAt.seconds * 1000).toLocaleString()} by{' '}
+                                                    {h.updatedBy || 'unknown'}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
