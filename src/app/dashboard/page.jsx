@@ -101,30 +101,31 @@ export default function AdminDashboard() {
           <p className="text-4xl font-bold">{orders.length}</p>
         </div>
 
-        <div className="bg-yellow-600 rounded-lg p-6 shadow ">
-          <h2 className="text-xl font-semibold mb-2">Pending Orders</h2>
-          <p className="text-4xl font-bold">{countByStatus('pending')}</p>
-        </div>
-
-        <div className="bg-green-800 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-2">Delivered Orders</h2>
-          <p className="text-4xl font-bold">{countByStatus('delivered')}</p>
-        </div>
-
         <div className="bg-indigo-800 rounded-lg p-6 shadow">
           <h2 className="text-xl font-semibold mb-2">Packed Orders</h2>
           <p className="text-4xl font-bold">{countByStatus('packed')}</p>
-        </div>
-
-        <div className="bg-red-800 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-2">Not Packed Orders</h2>
-          <p className="text-4xl font-bold">{countByStatus('not packed')}</p>
         </div>
 
         <div className="bg-orange-600 rounded-lg p-6 shadow ">
           <h2 className="text-xl font-semibold mb-2">Out for Delivery</h2>
           <p className="text-4xl font-bold">{countByStatus('out for delivery')}</p>
         </div>
+
+        <div className="bg-yellow-600 rounded-lg p-6 shadow ">
+          <h2 className="text-xl font-semibold mb-2">Pending Orders</h2>
+          <p className="text-4xl font-bold">{countByStatus('pending')}</p>
+        </div>
+
+        <div className="bg-red-800 rounded-lg p-6 shadow">
+          <h2 className="text-xl font-semibold mb-2">Not Packed Orders</h2>
+          <p className="text-4xl font-bold">{countByStatus('not packed')}</p>
+        </div>
+        
+        <div className="bg-green-800 rounded-lg p-6 shadow">
+          <h2 className="text-xl font-semibold mb-2">Delivered Orders</h2>
+          <p className="text-4xl font-bold">{countByStatus('delivered')}</p>
+        </div>
+
       </div>
 
       {/* New Order and View All Orders Buttons */}
