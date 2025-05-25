@@ -1,24 +1,25 @@
-// lib/firebase.js
-import { initializeApp } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
+// lib/firebase.ts
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+import dotenv from 'dotenv';
 
-// 🔐 Replace these with your actual Firebase config
+dotenv.config(); // Load .env.local
+
 const firebaseConfig = {
-    apiKey: "AIzaSyDbeBLPtqgLz7xqMPD57-rp2Dy40Ypj5QU",
-    authDomain: "habit-us-c24d0.firebaseapp.com",
-    projectId: "habit-us-c24d0",
-    storageBucket: "habit-us-c24d0.firebasestorage.app",
-    messagingSenderId: "649335907238",
-    appId: "1:649335907238:web:20e2bccab87a74d1d2e567",
-    measurementId: "G-SB3D7MKJ0K"
-}
+  apiKey: process.env.API_KEY,
+  authDomain: process.env.AUTH_DOMAIN,
+  projectId: process.env.PROJECT_ID,
+  storageBucket: process.env.STORAGE_BUCKET,
+  messagingSenderId: process.env.MESSAGING_SENDER_ID,
+  appId: process.env.APP_ID,
+  measurementId: process.env.MEASUREMENT_ID,
+};
 
-const app = initializeApp(firebaseConfig)
+// Prevent re-initialization during hot reload
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-const db = getFirestore(app)
-const storage = getStorage(app)
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-export { db, storage }
-
-
+export { db, storage };
