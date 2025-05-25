@@ -7,13 +7,13 @@ import dotenv from 'dotenv';
 dotenv.config(); // Load .env.local
 
 const firebaseConfig = {
-  apiKey: process.env.API_KEY,
-  authDomain: process.env.AUTH_DOMAIN,
-  projectId: process.env.PROJECT_ID,
-  storageBucket: process.env.STORAGE_BUCKET,
-  messagingSenderId: process.env.MESSAGING_SENDER_ID,
-  appId: process.env.APP_ID,
-  measurementId: process.env.MEASUREMENT_ID,
+    apiKey: process.env.API_KEY,
+    authDomain: "habit-us-c24d0.firebaseapp.com",
+    projectId: "habit-us-c24d0",
+    storageBucket: "habit-us-c24d0.firebasestorage.app",
+    messagingSenderId: "649335907238",
+    appId: "1:649335907238:web:20e2bccab87a74d1d2e567",
+    measurementId: "G-SB3D7MKJ0K"
 };
 
 // Prevent re-initialization during hot reload
