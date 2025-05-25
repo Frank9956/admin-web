@@ -41,7 +41,8 @@ export default function NewOrderPage() {
       }
 
       if (billFile) {
-        const billRef = ref(storage, `orders/${orderId}-bill.jpg`)
+        // Changed to different folder 'bills/'
+        const billRef = ref(storage, `bills/${orderId}-bill.pdf`)
         await uploadBytes(billRef, billFile)
         orderBillUrl = await getDownloadURL(billRef)
       }
@@ -58,9 +59,7 @@ export default function NewOrderPage() {
         status: 'pending',
         createdAt: new Date(),
       })
-
-      alert('Order added successfully!')
-      router.push('/orders') // Redirect to orders list
+      router.push('/dashboard/orders') // Redirect to orders list
     } catch (err) {
       console.error(err)
       alert('Failed to add order.')
@@ -70,12 +69,12 @@ export default function NewOrderPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
+    <div className="p-8  mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
       {/* Breadcrumb */}
       <nav className="mb-6 text-gray-400 text-sm" aria-label="Breadcrumb">
         <ol className="list-reset flex">
           <li>
-            <Link href="/" className="text-blue-400 hover:text-blue-500 underline">
+            <Link href="/dashboard" className="text-blue-400 hover:text-blue-500 underline">
               Home
             </Link>
           </li>
@@ -83,7 +82,7 @@ export default function NewOrderPage() {
             <span className="mx-2">›</span>
           </li>
           <li>
-            <Link href="/orders" className="text-blue-400 hover:text-blue-500 underline">
+            <Link href="/dashboard/orders" className="text-blue-400 hover:text-blue-500 underline">
               All Orders
             </Link>
           </li>
@@ -154,7 +153,7 @@ export default function NewOrderPage() {
             <input
               id="bill-upload"
               type="file"
-              accept="image/*"
+              accept="pdf/*"
               onChange={(e) => setBillFile(e.target.files?.[0] || null)}
               className="hidden"
             />

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { db, storage } from '@/lib/firebase'
+import { deleteObject } from 'firebase/storage'
 import {
     collection,
     getDocs,
@@ -112,49 +113,65 @@ export default function OrdersListPage() {
         setEditForm({ ...editForm, [e.target.name]: e.target.value })
     }
 
+
+
     const saveEdit = async (orderId) => {
         try {
             const orderRef = doc(db, 'orders', orderId)
+            const order = orders.find((o) => o.id === orderId)
 
-            // Upload new grocery image if selected
-            let groceryListImageUrl = null
+            const updateData = { ...editForm }
+
+            // Replace grocery image if new one is selected
             if (editImageFile) {
+                if (order.groceryListImageUrl) {
+                    try {
+                        const oldImageRef = ref(storage, order.groceryListImageUrl)
+                        await deleteObject(oldImageRef)
+                    } catch (err) {
+                        console.warn('Failed to delete old grocery image:', err)
+                    }
+                }
+
                 const imageRef = ref(storage, `orders/${orderId}-grocery.jpg`)
                 await uploadBytes(imageRef, editImageFile)
-                groceryListImageUrl = await getDownloadURL(imageRef)
+                const groceryListImageUrl = await getDownloadURL(imageRef)
+                updateData.groceryListImageUrl = groceryListImageUrl
             }
 
-            // Upload new bill PDF if selected
-            let billPdfUrl = null
             if (editBillFile) {
-                const billRef = ref(storage, `orders/${orderId}-bill.pdf`)
+                if (order.billPdfUrl || order.orderBillUrl) {
+                    try {
+                        const oldBillRef = ref(storage, order.billPdfUrl || order.orderBillUrl)
+                        await deleteObject(oldBillRef)
+                    } catch (err) {
+                        console.warn('Failed to delete old bill PDF:', err)
+                    }
+                }
+            
+                const billRef = ref(storage, `bills/${orderId}-bill.pdf`)
                 await uploadBytes(billRef, editBillFile)
-                billPdfUrl = await getDownloadURL(billRef)
+                const billPdfUrl = await getDownloadURL(billRef)
+                updateData.orderBillUrl = billPdfUrl // ✅ use orderBillUrl instead of billPdfUrl
             }
-
-            // Prepare update data object
-            const updateData = { ...editForm }
-            if (groceryListImageUrl !== null) updateData.groceryListImageUrl = groceryListImageUrl
-            if (billPdfUrl !== null) updateData.billPdfUrl = billPdfUrl
-
+            
             await updateDoc(orderRef, updateData)
 
             setOrders((prev) =>
-                prev.map((o) =>
-                    o.id === orderId ? { ...o, ...updateData } : o
-                )
+                prev.map((o) => (o.id === orderId ? { ...o, ...updateData } : o))
             )
 
             setEditingId(null)
             setEditForm({})
             setEditImageFile(null)
             setEditBillFile(null)
-            alert('Order updated successfully')
+            
         } catch (err) {
             console.error('Failed to update order:', err)
             alert('Failed to update order')
         }
     }
+
 
     const toggleHistory = (id) => {
         setExpandedHistory((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -197,11 +214,11 @@ export default function OrdersListPage() {
     }
 
     return (
-        <div className="p-8 max-w-6xl mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
+        <div className="p-8  mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
             <nav className="mb-6 text-gray-400 text-sm" aria-label="Breadcrumb">
                 <ol className="list-reset flex">
                     <li>
-                        <Link href="/" className="text-blue-400 hover:text-blue-500 underline">
+                        <Link href="/dashboard" className="text-blue-400 hover:text-blue-500 underline">
                             Home
                         </Link>
                     </li>
@@ -333,10 +350,10 @@ export default function OrdersListPage() {
                                             </span>
                                         </div>
                                         {/* Show existing bill PDF button */}
-                                        {order.billPdfUrl && !editBillFile && (
+                                        {order.orderBillUrl && !editBillFile && (
                                             <button
                                                 type="button"
-                                                onClick={() => window.open(order.billPdfUrl, '_blank')}
+                                                onClick={() => window.open(order.orderBillUrl, '_blank')}
                                                 className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
                                             >
                                                 View Current Bill PDF
@@ -388,9 +405,9 @@ export default function OrdersListPage() {
                                     )}
 
                                     {/* Show bill PDF button if exists */}
-                                    {order.billPdfUrl && (
+                                    {order.orderBillUrl && (
                                         <button
-                                            onClick={() => window.open(order.billPdfUrl, '_blank')}
+                                            onClick={() => window.open(order.orderBillUrl, '_blank')}
                                             className="mt-2 ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
                                         >
                                             View Bill PDF
@@ -405,45 +422,45 @@ export default function OrdersListPage() {
                                                     order.status
                                                 )}`}
                                             >
-                                                {order.status.charAt(0).toUpperCase()+ order.status.slice(1)}
+                                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                             </span>
                                         </p>
 
                                         <div className="mt-3 flex flex-wrap gap-2">
-                  {statuses
-                    .filter((s) => s !== order.status)
-                    .map((s) => {
-                      let btnColor = ''
-                      switch (s) {
-                        case 'pending':
-                          btnColor = 'bg-yellow-500 text-black hover:bg-yellow-600'
-                          break
-                        case 'packed':
-                          btnColor = 'bg-blue-600 text-white hover:bg-blue-700'
-                          break
-                        case 'not packed':
-                          btnColor = 'bg-red-600 text-white hover:bg-red-700'
-                          break
-                        case 'out for delivery':
-                          btnColor = 'bg-orange-500 text-black hover:bg-orange-600'
-                          break
-                        case 'delivered':
-                          btnColor = 'bg-green-600 text-white hover:bg-green-700'
-                          break
-                        default:
-                          btnColor = 'bg-gray-600 text-white hover:bg-gray-700'
-                      }
-                      return (
-                        <button
-                          key={s}
-                          onClick={() => updateStatus(order.id, s)}
-                          className={`px-3 py-1 rounded text-sm font-semibold ${btnColor}`}
-                        >
-                          Mark as {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </button>
-                      )
-                    })}
-                </div>
+                                            {statuses
+                                                .filter((s) => s !== order.status)
+                                                .map((s) => {
+                                                    let btnColor = ''
+                                                    switch (s) {
+                                                        case 'pending':
+                                                            btnColor = 'bg-yellow-500 text-black hover:bg-yellow-600'
+                                                            break
+                                                        case 'packed':
+                                                            btnColor = 'bg-blue-600 text-white hover:bg-blue-700'
+                                                            break
+                                                        case 'not packed':
+                                                            btnColor = 'bg-red-600 text-white hover:bg-red-700'
+                                                            break
+                                                        case 'out for delivery':
+                                                            btnColor = 'bg-orange-500 text-black hover:bg-orange-600'
+                                                            break
+                                                        case 'delivered':
+                                                            btnColor = 'bg-green-600 text-white hover:bg-green-700'
+                                                            break
+                                                        default:
+                                                            btnColor = 'bg-gray-600 text-white hover:bg-gray-700'
+                                                    }
+                                                    return (
+                                                        <button
+                                                            key={s}
+                                                            onClick={() => updateStatus(order.id, s)}
+                                                            className={`px-3 py-1 rounded text-sm font-semibold ${btnColor}`}
+                                                        >
+                                                            Mark as {s.charAt(0).toUpperCase() + s.slice(1)}
+                                                        </button>
+                                                    )
+                                                })}
+                                        </div>
                                     </div>
 
                                     <button
