@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { db, storage } from '@/lib/firebase'
 import { deleteObject } from 'firebase/storage'
 import {
@@ -18,6 +19,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { FaTrash, FaEdit, FaChevronDown } from 'react-icons/fa'
 
 export default function OrdersListPage() {
+    const router = useRouter()
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [editingId, setEditingId] = useState(null)
@@ -212,6 +214,15 @@ export default function OrdersListPage() {
         }
         return btnColor
     }
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+          localStorage.removeItem('isAdmin')
+          router.replace('/admin-login')
+        }, 600000) // 10 minutes in milliseconds
+    
+        return () => clearTimeout(timer)
+      }, [router])
 
     return (
         <div className="p-8  mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">

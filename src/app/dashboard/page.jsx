@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { db } from '@/lib/firebase'
 import {
   collection,
@@ -14,6 +15,11 @@ import {
 import Link from 'next/link'
 
 export default function AdminDashboard() {
+  const router = useRouter()
+
+  const [authorized, setAuthorized] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [showImageIds, setShowImageIds] = useState({})
@@ -26,9 +32,33 @@ export default function AdminDashboard() {
     'delivered',
   ]
 
+  // Authentication check
   useEffect(() => {
-    fetchOrders()
+    const isAdmin = localStorage.getItem('isAdmin')
+    if (isAdmin === 'true') {
+      setAuthorized(true)
+    } else {
+      router.replace('/admin-login')
+    }
+    setCheckingAuth(false)
   }, [])
+
+  // Auto sign out every 10 mins once authorized
+  useEffect(() => {
+    if (!authorized) return
+
+    const interval = setInterval(() => {
+      localStorage.removeItem('isAdmin')
+      router.replace('/admin-login')
+    }, 600000) // 10 mins
+
+    return () => clearInterval(interval)
+  }, [authorized, router])
+
+  // Fetch orders only if authorized
+  useEffect(() => {
+    if (authorized) fetchOrders()
+  }, [authorized])
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -65,13 +95,13 @@ export default function AdminDashboard() {
         prev.map((o) =>
           o.id === orderId
             ? {
-              ...o,
-              status: newStatus,
-              statusHistory: [
-                ...(o.statusHistory || []),
-                { status: newStatus, updatedAt: new Date(), updatedBy },
-              ],
-            }
+                ...o,
+                status: newStatus,
+                statusHistory: [
+                  ...(o.statusHistory || []),
+                  { status: newStatus, updatedAt: new Date(), updatedBy },
+                ],
+              }
             : o
         )
       )
@@ -90,11 +120,14 @@ export default function AdminDashboard() {
 
   const activeOrders = orders.filter((order) => order.status !== 'delivered')
 
+  if (checkingAuth) return null
+
+  if (!authorized) return null
+
   return (
     <div className="p-8  mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
-      {/* Analytics Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
         <div className="bg-blue-800 rounded-lg p-6 shadow">
           <h2 className="text-xl font-semibold mb-2">Total Orders</h2>

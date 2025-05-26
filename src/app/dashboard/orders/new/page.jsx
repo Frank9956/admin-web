@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { db, storage } from '@/lib/firebase'
@@ -67,6 +67,14 @@ export default function NewOrderPage() {
       setLoading(false)
     }
   }
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.removeItem('isAdmin')
+      router.replace('/admin-login')
+    }, 600000) // 10 minutes in milliseconds
+
+    return () => clearTimeout(timer)
+  }, [router])
 
   return (
     <div className="p-8  mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
