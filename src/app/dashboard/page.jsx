@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { db } from '@/lib/firebase'
+import { db } from '@/lib/firebase/firebase'
 import {
   collection,
   getDocs,
@@ -13,6 +13,7 @@ import {
   arrayUnion,
 } from 'firebase/firestore'
 import Link from 'next/link'
+import { sendCustomNotification } from '@/lib/firebase/sendNotification'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -24,6 +25,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [showImageIds, setShowImageIds] = useState({})
 
+  const [showNotificationModal, setShowNotificationModal] = useState(false)
+  const [title, setTitle] = useState("")
+  const [body, setBody] = useState("")
+  const [sending, setSending] = useState(false)
+
   const statuses = [
     'pending',
     'packed',
@@ -32,7 +38,6 @@ export default function AdminDashboard() {
     'delivered',
   ]
 
-  // Authentication check
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin')
     if (isAdmin === 'true') {
@@ -43,19 +48,15 @@ export default function AdminDashboard() {
     setCheckingAuth(false)
   }, [])
 
-  // Auto sign out every 10 mins once authorized
   useEffect(() => {
     if (!authorized) return
-
     const interval = setInterval(() => {
       localStorage.removeItem('isAdmin')
       router.replace('/admin-login')
-    }, 600000) // 10 mins
-
+    }, 600000)
     return () => clearInterval(interval)
   }, [authorized, router])
 
-  // Fetch orders only if authorized
   useEffect(() => {
     if (authorized) fetchOrders()
   }, [authorized])
@@ -95,13 +96,13 @@ export default function AdminDashboard() {
         prev.map((o) =>
           o.id === orderId
             ? {
-                ...o,
-                status: newStatus,
-                statusHistory: [
-                  ...(o.statusHistory || []),
-                  { status: newStatus, updatedAt: new Date(), updatedBy },
-                ],
-              }
+              ...o,
+              status: newStatus,
+              statusHistory: [
+                ...(o.statusHistory || []),
+                { status: newStatus, updatedAt: new Date(), updatedBy },
+              ],
+            }
             : o
         )
       )
@@ -111,22 +112,89 @@ export default function AdminDashboard() {
     }
   }
 
-  const toggleImage = (orderId) => {
-    setShowImageIds((prev) => ({
-      ...prev,
-      [orderId]: !prev[orderId],
-    }))
+  const handleSendNotification = async () => {
+    if (!title || !body) return alert("Both title and body are required.")
+    setSending(true)
+    try {
+      await sendCustomNotification({ title, body })
+      alert("✅ Notification sent")
+      setTitle("")
+      setBody("")
+      setShowNotificationModal(false)
+    } catch (err) {
+      console.error(err)
+      alert("❌ Failed to send notification")
+    } finally {
+      setSending(false)
+    }
   }
+
+  if (checkingAuth || !authorized) return null
 
   const activeOrders = orders.filter((order) => order.status !== 'delivered')
 
-  if (checkingAuth) return null
-
-  if (!authorized) return null
-
   return (
-    <div className="p-8  mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+    <div className="p-8 mx-auto font-sans bg-gray-900 min-h-screen text-gray-100 relative">
+      {/* Header with Notification Icon */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <button
+          onClick={() => setShowNotificationModal(true)}
+          className="relative"
+          title="Send Notification"
+        >
+          <svg
+            className="w-8 h-8 text-gray-200 hover:text-white transition"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 17h5l-1.405-1.405C18.21 14.79 18 13.918 18 13V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v2c0 .918-.21 1.79-.595 2.595L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* Notification Modal */}
+      {showNotificationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white text-black rounded-lg p-6 w-full max-w-md shadow-lg relative">
+            <button
+              onClick={() => setShowNotificationModal(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-semibold mb-4">Send Notification</h2>
+            <input
+              placeholder="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full p-2 border mb-3 rounded"
+            />
+            <textarea
+              placeholder="Body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              className="w-full p-2 border mb-3 rounded"
+            />
+            <button
+              onClick={handleSendNotification}
+              disabled={sending}
+              className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition"
+            >
+              {sending ? "Sending..." : "Send"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* The rest of your dashboard (summary cards, orders, etc.) remains unchanged */}
+      {/* Keep your stats, links, orders list here as-is... */}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
         <div className="bg-blue-800 rounded-lg p-6 shadow">
@@ -153,7 +221,7 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-semibold mb-2">Not Packed Orders</h2>
           <p className="text-4xl font-bold">{countByStatus('not packed')}</p>
         </div>
-        
+
         <div className="bg-green-800 rounded-lg p-6 shadow">
           <h2 className="text-xl font-semibold mb-2">Delivered Orders</h2>
           <p className="text-4xl font-bold">{countByStatus('delivered')}</p>
@@ -178,7 +246,7 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      
+
       {/* Active Orders List */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">Orders to Process</h2>
@@ -239,16 +307,16 @@ export default function AdminDashboard() {
                   <strong>Status:</strong>{' '}
                   <span
                     className={`inline-block px-3 py-1 rounded text-sm font-semibold capitalize ${order.status === 'pending'
-                        ? 'bg-yellow-500 text-black'
-                        : order.status === 'packed'
-                          ? 'bg-blue-600 text-white'
-                          : order.status === 'not packed'
-                            ? 'bg-red-600 text-white'
-                            : order.status === 'out for delivery'
-                              ? 'bg-orange-500 text-black'
-                              : order.status === 'delivered'
-                                ? 'bg-green-600 text-white'
-                                : 'bg-gray-600 text-white'
+                      ? 'bg-yellow-500 text-black'
+                      : order.status === 'packed'
+                        ? 'bg-blue-600 text-white'
+                        : order.status === 'not packed'
+                          ? 'bg-red-600 text-white'
+                          : order.status === 'out for delivery'
+                            ? 'bg-orange-500 text-black'
+                            : order.status === 'delivered'
+                              ? 'bg-green-600 text-white'
+                              : 'bg-gray-600 text-white'
                       }`}
                   >
                     {order.status}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { db, storage } from '@/lib/firebase'
+import { db, storage } from '@/lib/firebase/firebase'
 import { deleteObject } from 'firebase/storage'
 import {
     collection,

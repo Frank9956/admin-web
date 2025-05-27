@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getDocs, collection, query, where } from 'firebase/firestore'
-import { db } from '@/lib/firebase' // adjust based on your setup
+import { db } from '@/lib/firebase/firebase' // adjust based on your setup
 
 export default function AdminLogin() {
   const router = useRouter()
