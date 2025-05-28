@@ -165,7 +165,14 @@ export default function AdminDashboard() {
 
       {/* Notification Modal */}
       {showNotificationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.3)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+          }}
+        >
           <div className="bg-white text-black rounded-lg p-6 w-full max-w-md shadow-lg relative">
             <button
               onClick={() => setShowNotificationModal(false)}
@@ -191,14 +198,14 @@ export default function AdminDashboard() {
               disabled={sending}
               className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700 transition"
             >
-              {sending ? 'Sending...' : 'Send to Delivery'}
+              {sending ? "Sending..." : "Send to Delivery"}
             </button>
             <button
               onClick={handleSendStoreNotification}
               disabled={sending}
               className="w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700 transition mt-2"
             >
-              {sending ? 'Sending...' : 'Send to Store'}
+              {sending ? "Sending..." : "Send to Store"}
             </button>
           </div>
         </div>
