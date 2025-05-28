@@ -204,14 +204,37 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
-        <StatCard title="Total Orders" count={orders.length} color="blue-800" />
-        <StatCard title="Packed Orders" count={countByStatus('packed')} color="indigo-800" />
-        <StatCard title="Out for Delivery" count={countByStatus('out for delivery')} color="orange-600" />
-        <StatCard title="Pending Orders" count={countByStatus('pending')} color="yellow-600" />
-        <StatCard title="Not Packed Orders" count={countByStatus('not packed')} color="red-800" />
-        <StatCard title="Delivered Orders" count={countByStatus('delivered')} color="green-800" />
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+        <div className="bg-blue-800 rounded-lg p-6 shadow">
+          <h2 className="text-xl font-semibold mb-2">Total Orders</h2>
+          <p className="text-4xl font-bold">{orders.length}</p>
+        </div>
+
+        <div className="bg-indigo-800 rounded-lg p-6 shadow">
+          <h2 className="text-xl font-semibold mb-2">Packed Orders</h2>
+          <p className="text-4xl font-bold">{countByStatus('packed')}</p>
+        </div>
+
+        <div className="bg-orange-600 rounded-lg p-6 shadow ">
+          <h2 className="text-xl font-semibold mb-2">Out for Delivery</h2>
+          <p className="text-4xl font-bold">{countByStatus('out for delivery')}</p>
+        </div>
+
+        <div className="bg-yellow-600 rounded-lg p-6 shadow ">
+          <h2 className="text-xl font-semibold mb-2">Pending Orders</h2>
+          <p className="text-4xl font-bold">{countByStatus('pending')}</p>
+        </div>
+
+        <div className="bg-red-800 rounded-lg p-6 shadow">
+          <h2 className="text-xl font-semibold mb-2">Not Packed Orders</h2>
+          <p className="text-4xl font-bold">{countByStatus('not packed')}</p>
+        </div>
+
+        <div className="bg-green-800 rounded-lg p-6 shadow">
+          <h2 className="text-xl font-semibold mb-2">Delivered Orders</h2>
+          <p className="text-4xl font-bold">{countByStatus('delivered')}</p>
+        </div>
+
       </div>
 
       {/* Buttons */}
