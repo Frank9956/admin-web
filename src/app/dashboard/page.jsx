@@ -13,30 +13,23 @@ import {
   arrayUnion,
 } from 'firebase/firestore'
 import Link from 'next/link'
-import { sendCustomNotification } from '@/lib/firebase/sendNotification'
+import { sendCustomDeliveryNotification } from '@/lib/firebase/sendDeliveryNotification'
+import { sendCustomStoreNotification } from '@/lib/firebase/sendStoreNotification'
 
 export default function AdminDashboard() {
   const router = useRouter()
 
   const [authorized, setAuthorized] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
-
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [showImageIds, setShowImageIds] = useState({})
-
   const [showNotificationModal, setShowNotificationModal] = useState(false)
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
   const [sending, setSending] = useState(false)
 
-  const statuses = [
-    'pending',
-    'packed',
-    'not packed',
-    'out for delivery',
-    'delivered',
-  ]
+  const statuses = ['pending', 'packed', 'not packed', 'out for delivery', 'delivered']
 
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin')
@@ -96,13 +89,13 @@ export default function AdminDashboard() {
         prev.map((o) =>
           o.id === orderId
             ? {
-              ...o,
-              status: newStatus,
-              statusHistory: [
-                ...(o.statusHistory || []),
-                { status: newStatus, updatedAt: new Date(), updatedBy },
-              ],
-            }
+                ...o,
+                status: newStatus,
+                statusHistory: [
+                  ...(o.statusHistory || []),
+                  { status: newStatus, updatedAt: new Date(), updatedBy },
+                ],
+              }
             : o
         )
       )
@@ -112,18 +105,29 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleSendNotification = async () => {
+  const handleSendDeliveryNotification = async () => {
     if (!title || !body) return alert("Both title and body are required.")
     setSending(true)
     try {
-      await sendCustomNotification({ title, body })
-      alert("✅ Notification sent")
-      setTitle("")
-      setBody("")
-      setShowNotificationModal(false)
+      await sendCustomDeliveryNotification({ title, body })
+      alert("✅ Notification sent to Delivery")
     } catch (err) {
-      console.error(err)
-      alert("❌ Failed to send notification")
+      console.error("❌ Delivery notification error:", err)
+      alert("❌ Failed to send Delivery notification")
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleSendStoreNotification = async () => {
+    if (!title || !body) return alert("Both title and body are required.")
+    setSending(true)
+    try {
+      await sendCustomStoreNotification({ title, body })
+      alert("✅ Notification sent to Store")
+    } catch (err) {
+      console.error("❌ Store notification error:", err)
+      alert("❌ Failed to send Store notification")
     } finally {
       setSending(false)
     }
@@ -135,7 +139,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-8 mx-auto font-sans bg-gray-900 min-h-screen text-gray-100 relative">
-      {/* Header with Notification Icon */}
+      {/* Header with Notification Button */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <button
@@ -183,71 +187,44 @@ export default function AdminDashboard() {
               className="w-full p-2 border mb-3 rounded"
             />
             <button
-              onClick={handleSendNotification}
+              onClick={handleSendDeliveryNotification}
               disabled={sending}
-              className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition"
+              className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700 transition"
             >
-              {sending ? "Sending..." : "Send"}
+              {sending ? 'Sending...' : 'Send to Delivery'}
+            </button>
+            <button
+              onClick={handleSendStoreNotification}
+              disabled={sending}
+              className="w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700 transition mt-2"
+            >
+              {sending ? 'Sending...' : 'Send to Store'}
             </button>
           </div>
         </div>
       )}
 
-      {/* The rest of your dashboard (summary cards, orders, etc.) remains unchanged */}
-      {/* Keep your stats, links, orders list here as-is... */}
-
+      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
-        <div className="bg-blue-800 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-2">Total Orders</h2>
-          <p className="text-4xl font-bold">{orders.length}</p>
-        </div>
-
-        <div className="bg-indigo-800 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-2">Packed Orders</h2>
-          <p className="text-4xl font-bold">{countByStatus('packed')}</p>
-        </div>
-
-        <div className="bg-orange-600 rounded-lg p-6 shadow ">
-          <h2 className="text-xl font-semibold mb-2">Out for Delivery</h2>
-          <p className="text-4xl font-bold">{countByStatus('out for delivery')}</p>
-        </div>
-
-        <div className="bg-yellow-600 rounded-lg p-6 shadow ">
-          <h2 className="text-xl font-semibold mb-2">Pending Orders</h2>
-          <p className="text-4xl font-bold">{countByStatus('pending')}</p>
-        </div>
-
-        <div className="bg-red-800 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-2">Not Packed Orders</h2>
-          <p className="text-4xl font-bold">{countByStatus('not packed')}</p>
-        </div>
-
-        <div className="bg-green-800 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-2">Delivered Orders</h2>
-          <p className="text-4xl font-bold">{countByStatus('delivered')}</p>
-        </div>
-
+        <StatCard title="Total Orders" count={orders.length} color="blue-800" />
+        <StatCard title="Packed Orders" count={countByStatus('packed')} color="indigo-800" />
+        <StatCard title="Out for Delivery" count={countByStatus('out for delivery')} color="orange-600" />
+        <StatCard title="Pending Orders" count={countByStatus('pending')} color="yellow-600" />
+        <StatCard title="Not Packed Orders" count={countByStatus('not packed')} color="red-800" />
+        <StatCard title="Delivered Orders" count={countByStatus('delivered')} color="green-800" />
       </div>
 
-      {/* New Order and View All Orders Buttons */}
+      {/* Buttons */}
       <div className="mb-8 flex flex-wrap gap-4">
-        <Link
-          href="/dashboard/orders/new"
-          className="bg-black text-white px-5 py-3 rounded hover:bg-gray-800 transition inline-block text-center"
-        >
+        <Link href="/dashboard/orders/new" className="bg-black text-white px-5 py-3 rounded hover:bg-gray-800">
           + Add New Order
         </Link>
-
-        <Link
-          href="/dashboard/orders"
-          className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900 transition"
-        >
+        <Link href="/dashboard/orders" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
           View All Orders
         </Link>
       </div>
 
-
-      {/* Active Orders List */}
+      {/* Active Orders */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">Orders to Process</h2>
         {loading ? (
@@ -257,149 +234,134 @@ export default function AdminDashboard() {
         ) : (
           <div className="space-y-6">
             {activeOrders.slice(0, 10).map((order) => (
-              <div
+              <OrderCard
                 key={order.id}
-                className="border rounded p-4 shadow bg-gray-800 text-gray-100"
-              >
-                <p>
-                  <strong>Order ID:</strong> {order.orderId}
-                </p>
-                <p>
-                  <strong>Customer:</strong> {order.customerName}
-                </p>
-                <p>
-                  <strong>Address:</strong> {order.address}
-                </p>
-                <p>
-                  <strong>Phone:</strong>{' '}
-                  <a href={`tel:${order.phone}`} className="text-blue-400 underline">
-                    {order.phone}
-                  </a>
-                </p>
-                <p>
-                  <strong>Store ID:</strong> {order.storeId || 'N/A'}
-                </p>
-                <p>
-                  <strong>Delivery Partner ID:</strong> {order.deliveryPartnerId || 'N/A'}
-                </p>
-
-                {/* Grocery List Image */}
-                {order.groceryListImageUrl && (
-                  <button
-                    onClick={() => window.open(order.groceryListImageUrl, '_blank')}
-                    className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-                  >
-                    View Grocery List Image
-                  </button>
-                )}
-
-                {/* Bill PDF */}
-                {order.billPdfUrl && (
-                  <button
-                    onClick={() => window.open(order.billPdfUrl, '_blank')}
-                    className="mt-2 ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-                  >
-                    View Bill PDF
-                  </button>
-                )}
-
-                <p className="mt-4">
-                  <strong>Status:</strong>{' '}
-                  <span
-                    className={`inline-block px-3 py-1 rounded text-sm font-semibold capitalize ${order.status === 'pending'
-                      ? 'bg-yellow-500 text-black'
-                      : order.status === 'packed'
-                        ? 'bg-blue-600 text-white'
-                        : order.status === 'not packed'
-                          ? 'bg-red-600 text-white'
-                          : order.status === 'out for delivery'
-                            ? 'bg-orange-500 text-black'
-                            : order.status === 'delivered'
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-600 text-white'
-                      }`}
-                  >
-                    {order.status}
-                  </span>
-                </p>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {statuses
-                    .filter((s) => s !== order.status)
-                    .map((s) => {
-                      let btnColor = ''
-                      switch (s) {
-                        case 'pending':
-                          btnColor = 'bg-yellow-500 text-black hover:bg-yellow-600'
-                          break
-                        case 'packed':
-                          btnColor = 'bg-blue-600 text-white hover:bg-blue-700'
-                          break
-                        case 'not packed':
-                          btnColor = 'bg-red-600 text-white hover:bg-red-700'
-                          break
-                        case 'out for delivery':
-                          btnColor = 'bg-orange-500 text-black hover:bg-orange-600'
-                          break
-                        case 'delivered':
-                          btnColor = 'bg-green-600 text-white hover:bg-green-700'
-                          break
-                        default:
-                          btnColor = 'bg-gray-600 text-white hover:bg-gray-700'
-                      }
-                      return (
-                        <button
-                          key={s}
-                          onClick={() => updateStatus(order.id, s)}
-                          className={`px-3 py-1 rounded text-sm font-semibold ${btnColor}`}
-                        >
-                          Mark as {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </button>
-                      )
-                    })}
-                </div>
-
-                {/* Status History toggle */}
-                <button
-                  onClick={() =>
-                    setShowImageIds((prev) => ({
-                      ...prev,
-                      [`history-${order.id}`]: !prev[`history-${order.id}`],
-                    }))
-                  }
-                  className="mt-4 flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-gray-200"
-                >
-                  Status History
-                  <svg
-                    className={`w-4 h-4 transition-transform ${showImageIds[`history-${order.id}`] ? 'rotate-180' : ''
-                      }`}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {showImageIds[`history-${order.id}`] && (
-                  <ul className="mt-2 text-sm max-h-40 overflow-auto space-y-1 border border-gray-700 rounded p-2 bg-gray-900">
-                    {(order.statusHistory || []).map((h, i) => (
-                      <li key={i}>
-                        <strong>{h.status}</strong> —{' '}
-                        {new Date(h.updatedAt.seconds ? h.updatedAt.seconds * 1000 : h.updatedAt).toLocaleString()}{' '}
-                        by {h.updatedBy || 'unknown'}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                order={order}
+                statuses={statuses}
+                updateStatus={updateStatus}
+                showImageIds={showImageIds}
+                setShowImageIds={setShowImageIds}
+              />
             ))}
           </div>
         )}
       </section>
-
     </div>
   )
 }
+
+// Reusable Stat Card Component
+const StatCard = ({ title, count, color }) => (
+  <div className={`bg-${color} rounded-lg p-6 shadow`}>
+    <h2 className="text-xl font-semibold mb-2">{title}</h2>
+    <p className="text-4xl font-bold">{count}</p>
+  </div>
+)
+
+// Reusable Order Card Component
+const OrderCard = ({ order, statuses, updateStatus, showImageIds, setShowImageIds }) => (
+  <div className="border rounded p-4 shadow bg-gray-800 text-gray-100">
+    <p><strong>Order ID:</strong> {order.orderId}</p>
+    <p><strong>Customer:</strong> {order.customerName}</p>
+    <p><strong>Address:</strong> {order.address}</p>
+    <p>
+      <strong>Phone:</strong> <a href={`tel:${order.phone}`} className="text-blue-400 underline">{order.phone}</a>
+    </p>
+    <p><strong>Store ID:</strong> {order.storeId || 'N/A'}</p>
+    <p><strong>Delivery Partner ID:</strong> {order.deliveryPartnerId || 'N/A'}</p>
+
+    {order.groceryListImageUrl && (
+      <button
+        onClick={() => window.open(order.groceryListImageUrl, '_blank')}
+        className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+      >
+        View Grocery List Image
+      </button>
+    )}
+
+    {order.billPdfUrl && (
+      <button
+        onClick={() => window.open(order.billPdfUrl, '_blank')}
+        className="mt-2 ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+      >
+        View Bill PDF
+      </button>
+    )}
+
+    <p className="mt-4">
+      <strong>Status:</strong>{' '}
+      <span className={`inline-block px-3 py-1 rounded text-sm font-semibold capitalize ${
+        order.status === 'pending'
+          ? 'bg-yellow-500 text-black'
+          : order.status === 'packed'
+          ? 'bg-blue-600 text-white'
+          : order.status === 'not packed'
+          ? 'bg-red-600 text-white'
+          : order.status === 'out for delivery'
+          ? 'bg-orange-500 text-black'
+          : order.status === 'delivered'
+          ? 'bg-green-600 text-white'
+          : 'bg-gray-600 text-white'
+      }`}>
+        {order.status}
+      </span>
+    </p>
+
+    <div className="mt-3 flex flex-wrap gap-2">
+      {statuses.filter((s) => s !== order.status).map((s) => {
+        const colors = {
+          pending: 'bg-yellow-500 text-black hover:bg-yellow-600',
+          packed: 'bg-blue-600 text-white hover:bg-blue-700',
+          'not packed': 'bg-red-600 text-white hover:bg-red-700',
+          'out for delivery': 'bg-orange-500 text-black hover:bg-orange-600',
+          delivered: 'bg-green-600 text-white hover:bg-green-700',
+        }
+        return (
+          <button
+            key={s}
+            onClick={() => updateStatus(order.id, s)}
+            className={`px-3 py-1 rounded text-sm font-semibold ${colors[s]}`}
+          >
+            Mark as {s.charAt(0).toUpperCase() + s.slice(1)}
+          </button>
+        )
+      })}
+    </div>
+
+    {/* Status History */}
+    <button
+      onClick={() =>
+        setShowImageIds((prev) => ({
+          ...prev,
+          [`history-${order.id}`]: !prev[`history-${order.id}`],
+        }))
+      }
+      className="mt-4 flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-gray-200"
+    >
+      Status History
+      <svg
+        className={`w-4 h-4 transition-transform ${
+          showImageIds[`history-${order.id}`] ? 'rotate-180' : ''
+        }`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+
+    {showImageIds[`history-${order.id}`] && (
+      <ul className="mt-2 text-sm max-h-40 overflow-auto space-y-1 border border-gray-700 rounded p-2 bg-gray-900">
+        {(order.statusHistory || []).map((h, i) => (
+          <li key={i}>
+            <strong>{h.status}</strong> —{' '}
+            {new Date(h.updatedAt.seconds ? h.updatedAt.seconds * 1000 : h.updatedAt).toLocaleString()} by {h.updatedBy || 'unknown'}
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+)
