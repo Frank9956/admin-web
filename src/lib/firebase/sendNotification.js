@@ -1,13 +1,21 @@
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { app } from "./firebase"; // your firebase app
 
-export async function sendCustomNotification({ title, body, topic = "admins" }) {
+export async function sendCustomNotification({ title, body }) {
   const functions = getFunctions(app);
   const sendNotification = httpsCallable(functions, "sendCustomNotification");
 
   try {
-    const result = await sendNotification({ title, body, topic });
-    return result.data;
+    const [storeResult, deliveryResult] = await Promise.all([
+      sendNotification({ title, body, topic: "store" }),
+      sendNotification({ title, body, topic: "delivery" }),
+    ]);
+
+    return {
+      success: true,
+      storeResponse: storeResult.data,
+      deliveryResponse: deliveryResult.data,
+    };
   } catch (err) {
     console.error("Notification error:", err);
     throw err;
