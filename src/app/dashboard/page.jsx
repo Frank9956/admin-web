@@ -252,6 +252,12 @@ export default function AdminDashboard() {
         <Link href="/dashboard/orders" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
           View All Orders
         </Link>
+        <Link href="/dashboard/customers" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
+          View All Customers
+        </Link>
+        <Link href="/dashboard/users" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
+          View All Users
+        </Link>
       </div>
 
       {/* Active Orders */}

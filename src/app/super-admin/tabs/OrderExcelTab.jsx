@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 
 export default function OrderExcelTab() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -29,20 +29,18 @@ export default function OrderExcelTab() {
     fetchOrders();
   }, []);
 
-  const exportToExcel = () => {
-    const exportData = orders.map(o => ({
-      'Order ID': o.orderId || 'N/A',
-      Address: o.address || 'N/A',
-      Amount: o.paidAmount ? `₹${o.paidAmount}` : '₹0',
-      'Payment Method': o.payment || 'N/A',
-      Status: o.status || 'N/A',
-      'Bill URL': o.orderBillUrl || 'N/A',
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
-    XLSX.writeFile(workbook, 'Orders.xlsx');
+  const updateGoogleSheet = async () => {
+    setUpdating(true);
+    try {
+      const res = await fetch('/api/export/orders');
+      if (!res.ok) throw new Error('Failed to update sheet');
+      alert('✅ Google Sheet updated successfully.');
+    } catch (err) {
+      console.error('Update error:', err);
+      alert('❌ Failed to update Google Sheet.');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   return (
@@ -50,10 +48,13 @@ export default function OrderExcelTab() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Order Details</h2>
         <button
-          onClick={exportToExcel}
-          className="bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded shadow"
+          onClick={updateGoogleSheet}
+          disabled={updating}
+          className={`${
+            updating ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'
+          } transition text-white px-5 py-2 rounded shadow`}
         >
-          Export to Excel
+          {updating ? 'Updating...' : 'Update Google Sheet'}
         </button>
       </div>
 

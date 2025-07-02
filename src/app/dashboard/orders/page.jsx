@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { db, storage } from '@/lib/firebase/firebase'
 import { deleteObject } from 'firebase/storage'
+import { getDoc } from 'firebase/firestore'
 import {
     collection,
     getDocs,
@@ -99,6 +100,9 @@ export default function OrdersListPage() {
             phone: order.phone || '',
             storeId: order.storeId || '',
             deliveryPartnerId: order.deliveryPartnerId || '',
+            deliveryCharges: order.deliveryCharges || '',
+            totalDiscount: order.totalDiscount || '',
+            paidAmount: order.paidAmount || '',
         })
         setEditImageFile(null)
         setEditBillFile(null)
@@ -150,13 +154,13 @@ export default function OrdersListPage() {
                         console.warn('Failed to delete old bill PDF:', err)
                     }
                 }
-            
+
                 const billRef = ref(storage, `bills/${orderId}-bill.pdf`)
                 await uploadBytes(billRef, editBillFile)
                 const billPdfUrl = await getDownloadURL(billRef)
                 updateData.orderBillUrl = billPdfUrl // ✅ use orderBillUrl instead of billPdfUrl
             }
-            
+
             await updateDoc(orderRef, updateData)
 
             setOrders((prev) =>
@@ -167,7 +171,7 @@ export default function OrdersListPage() {
             setEditForm({})
             setEditImageFile(null)
             setEditBillFile(null)
-            
+
         } catch (err) {
             console.error('Failed to update order:', err)
             alert('Failed to update order')
@@ -182,7 +186,49 @@ export default function OrdersListPage() {
     const deleteOrder = async (orderId) => {
         if (confirm('Are you sure you want to delete this order?')) {
             try {
-                await deleteDoc(doc(db, 'orders', orderId))
+                const orderRef = doc(db, 'orders', orderId)
+                const orderSnap = await getDoc(orderRef)
+
+                if (!orderSnap.exists()) {
+                    alert('Order not found')
+                    return
+                }
+
+                const orderData = orderSnap.data()
+                const customerPhone = orderData.phone
+                const customerRef = doc(db, 'customers', customerPhone)
+
+                // Decrease customer's order count
+                const customerSnap = await getDoc(customerRef)
+                if (customerSnap.exists()) {
+                    const customerData = customerSnap.data()
+                    const newCount = Math.max((customerData.orderCount || 1) - 1, 0)
+                    await updateDoc(customerRef, { orderCount: newCount })
+                }
+
+                // Delete grocery image from storage
+                if (orderData.groceryListImageUrl) {
+                    try {
+                        const groceryRef = ref(storage, orderData.groceryListImageUrl)
+                        await deleteObject(groceryRef)
+                    } catch (err) {
+                        console.warn('Could not delete grocery image:', err)
+                    }
+                }
+
+                // Delete bill PDF from storage
+                if (orderData.orderBillUrl) {
+                    try {
+                        const billRef = ref(storage, orderData.orderBillUrl)
+                        await deleteObject(billRef)
+                    } catch (err) {
+                        console.warn('Could not delete bill PDF:', err)
+                    }
+                }
+
+                // Finally delete the order
+                await deleteDoc(orderRef)
+
                 setOrders((prev) => prev.filter((o) => o.id !== orderId))
             } catch (err) {
                 console.error('Failed to delete order:', err)
@@ -190,6 +236,7 @@ export default function OrdersListPage() {
             }
         }
     }
+
 
     const getStatusButtonClass = (status) => {
         let btnColor = ''
@@ -217,12 +264,12 @@ export default function OrdersListPage() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-          localStorage.removeItem('isAdmin')
-          router.replace('/admin-login')
+            localStorage.removeItem('isAdmin')
+            router.replace('/admin-login')
         }, 600000) // 10 minutes in milliseconds
-    
+
         return () => clearTimeout(timer)
-      }, [router])
+    }, [router])
 
     return (
         <div className="p-8  mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
@@ -285,6 +332,9 @@ export default function OrdersListPage() {
                                         'phone',
                                         'storeId',
                                         'deliveryPartnerId',
+                                        'totalDiscount',
+                                        'deliveryCharges',
+                                        'paidAmount',
                                     ].map((field) => (
                                         <input
                                             key={field}
@@ -403,6 +453,9 @@ export default function OrdersListPage() {
                                     </p>
                                     <p>
                                         <strong>Delivery Partner ID:</strong> {order.deliveryPartnerId}
+                                    </p>
+                                    <p>
+                                        <strong>Paid Amount:</strong> {order.paidAmount}
                                     </p>
 
                                     {/* Show grocery list image button if exists */}

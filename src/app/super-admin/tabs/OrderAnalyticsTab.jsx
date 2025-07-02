@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
-
 import { Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -24,19 +23,14 @@ function Card({ title, value, className }) {
 }
 
 export default function OrderAnalyticsTab() {
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    delivered: 0,
-    revenue: 0,
-    last24hOrders: 0,
-    last7dOrders: 0,
-    last24hRevenue: 0,
-    last7dRevenue: 0,
-    cashCount: 0,
-    upiCount: 0,
-  });
+  const [stats, setStats] = useState({});
+  const [customStats, setCustomStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState([]);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+
+  const formatCurrency = (amount) => `₹${(amount || 0).toLocaleString()}`;
 
   useEffect(() => {
     async function fetchStats() {
@@ -44,75 +38,89 @@ export default function OrderAnalyticsTab() {
       try {
         const ordersCol = collection(db, 'orders');
         const ordersSnapshot = await getDocs(ordersCol);
-        const orders = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const ordersData = ordersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        setOrders(ordersData);
 
         const now = new Date();
         const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-        const total = orders.length;
-        const pending = orders.filter(o => o.status === 'pending').length;
-        const delivered = orders.filter(o => o.status === 'delivered').length;
-        const revenue = orders.reduce((sum, o) => sum + (o.paidAmount || 0), 0);
+        const getDate = (o) => o.createdAt?.toDate?.() || new Date(o.createdAt);
 
-        const last24hOrders = orders.filter(o => {
-          if (!o.createdAt) return false;
-          const createdAtDate = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-          return createdAtDate > dayAgo;
-        }).length;
+        const reduceSum = (arr, field, filter) =>
+          arr.reduce((sum, o) => filter(o) ? sum + (parseFloat(o[field]) || 0) : sum, 0);
 
-        const last7dOrders = orders.filter(o => {
-          if (!o.createdAt) return false;
-          const createdAtDate = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-          return createdAtDate > weekAgo;
-        }).length;
-
-        const last24hRevenue = orders.reduce((sum, o) => {
-          if (!o.createdAt) return sum;
-          const createdAtDate = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-          if (createdAtDate > dayAgo) return sum + (o.paidAmount || 0);
-          return sum;
-        }, 0);
-
-        const last7dRevenue = orders.reduce((sum, o) => {
-          if (!o.createdAt) return sum;
-          const createdAtDate = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-          if (createdAtDate > weekAgo) return sum + (o.paidAmount || 0);
-          return sum;
-        }, 0);
-
-        // Calculate payment method counts
-        const cashCount = orders.filter(o => o.payment === 'cash').length;
-        const upiCount = orders.filter(o => o.payment === 'upi').length;
+        const countOrders = (arr, filter) => arr.filter(filter).length;
 
         setStats({
-          total,
-          pending,
-          delivered,
-          revenue,
-          last24hOrders,
-          last7dOrders,
-          last24hRevenue,
-          last7dRevenue,
-          cashCount,
-          upiCount,
+          total: ordersData.length,
+          pending: countOrders(ordersData, o => o.status === 'pending'),
+          delivered: countOrders(ordersData, o => o.status === 'delivered'),
+          revenue: reduceSum(ordersData, 'paidAmount', () => true),
+          last24hRevenue: reduceSum(ordersData, 'paidAmount', o => getDate(o) > dayAgo),
+          last7dRevenue: reduceSum(ordersData, 'paidAmount', o => getDate(o) > weekAgo),
+          last30dRevenue: reduceSum(ordersData, 'paidAmount', o => getDate(o) > monthAgo),
+          last24hOrders: countOrders(ordersData, o => getDate(o) > dayAgo),
+          last7dOrders: countOrders(ordersData, o => getDate(o) > weekAgo),
+          last30dOrders: countOrders(ordersData, o => getDate(o) > monthAgo),
+          totalDiscount: reduceSum(ordersData, 'totalDiscount', () => true),
+          last24hDiscount: reduceSum(ordersData, 'totalDiscount', o => getDate(o) > dayAgo),
+          last7dDiscount: reduceSum(ordersData, 'totalDiscount', o => getDate(o) > weekAgo),
+          last30dDiscount: reduceSum(ordersData, 'totalDiscount', o => getDate(o) > monthAgo),
+          deliveryCharges: reduceSum(ordersData, 'deliveryCharges', () => true),
+          last24hDeliveryCharges: reduceSum(ordersData, 'deliveryCharges', o => getDate(o) > dayAgo),
+          last7dDeliveryCharges: reduceSum(ordersData, 'deliveryCharges', o => getDate(o) > weekAgo),
+          last30dDeliveryCharges: reduceSum(ordersData, 'deliveryCharges', o => getDate(o) > monthAgo),
+          cashCount: countOrders(ordersData, o => o.payment === 'cash'),
+          upiCount: countOrders(ordersData, o => o.payment === 'upi'),
         });
+
       } catch (err) {
-        console.error('Failed to fetch order stats:', err);
+        console.error('Failed to fetch stats:', err);
       } finally {
         setLoading(false);
       }
     }
+
     fetchStats();
   }, []);
+
+  const handleCustomFilter = () => {
+    if (!customStart || !customEnd) return;
+
+    const start = new Date(customStart);
+    const end = new Date(customEnd);
+
+    const inRange = (o) => {
+      const d = o.createdAt?.toDate?.() || new Date(o.createdAt);
+      return d >= start && d <= end;
+    };
+
+    const filtered = orders.filter(inRange);
+
+    const reduceSum = (arr, field) =>
+      arr.reduce((sum, o) => sum + (parseFloat(o[field]) || 0), 0);
+
+    setCustomStats({
+      orders: filtered.length,
+      revenue: reduceSum(filtered, 'paidAmount'),
+      discount: reduceSum(filtered, 'totalDiscount'),
+      deliveryCharges: reduceSum(filtered, 'deliveryCharges')
+    });
+  };
 
   const pieData = {
     labels: ['Cash', 'UPI'],
     datasets: [
       {
         label: 'Payment Methods',
-        data: [stats.cashCount, stats.upiCount],
-        backgroundColor: ['#10B981', '#3B82F6'], // green and blue
+        data: [stats.cashCount || 0, stats.upiCount || 0],
+        backgroundColor: ['#10B981', '#3B82F6'],
         hoverBackgroundColor: ['#059669', '#2563EB'],
       },
     ],
@@ -120,95 +128,95 @@ export default function OrderAnalyticsTab() {
 
   return (
     <div className="space-y-10 bg-gray-900 p-6 rounded-lg">
-      {/* Order Details Section */}
+      {/* Custom Filter Section */}
+      <section>
+        <h2 className="text-orange-300 text-xl font-semibold mb-4">Filter by Date Range</h2>
+        <div className="flex flex-wrap items-end gap-4">
+          <input
+            type="date"
+            value={customStart}
+            onChange={(e) => setCustomStart(e.target.value)}
+            className="p-2 rounded bg-gray-800 border border-gray-700 text-white"
+          />
+          <input
+            type="date"
+            value={customEnd}
+            onChange={(e) => setCustomEnd(e.target.value)}
+            className="p-2 rounded bg-gray-800 border border-gray-700 text-white"
+          />
+          <button
+            onClick={handleCustomFilter}
+            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white font-medium"
+          >
+            Apply Filter
+          </button>
+        </div>
+
+        {/* Display Filtered Stats */}
+        {customStats.orders > 0 && (
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+            <Card title="Filtered Orders" value={customStats.orders} className="bg-gray-700" />
+            <Card title="Filtered Revenue" value={formatCurrency(customStats.revenue)} className="bg-green-700" />
+            <Card title="Filtered Discount" value={formatCurrency(customStats.discount)} className="bg-pink-700" />
+            <Card title="Filtered Delivery Charges" value={formatCurrency(customStats.deliveryCharges)} className="bg-orange-700" />
+          </div>
+        )}
+      </section>
+
+      {/* Standard Analytics Sections */}
       <section>
         <h2 className="text-blue-400 text-xl font-semibold mb-4">Order Details</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {loading ? (
-            <p className="text-gray-400 col-span-full text-center"></p>
-          ) : (
-            <>
-              <Card
-                title="Total Orders"
-                value={stats.total}
-                className="bg-blue-700 hover:bg-blue-600 transition"
-              />
-              <Card
-                title="Pending"
-                value={stats.pending}
-                className="bg-blue-600 hover:bg-blue-500 transition"
-              />
-              <Card
-                title="Delivered"
-                value={stats.delivered}
-                className="bg-blue-500 hover:bg-blue-400 transition"
-              />
-            </>
-          )}
+          <Card title="Total Orders" value={stats.total} className="bg-blue-700" />
+          <Card title="Pending" value={stats.pending} className="bg-blue-600" />
+          <Card title="Delivered" value={stats.delivered} className="bg-blue-500" />
         </div>
       </section>
 
-      {/* Revenue Section */}
       <section>
         <h2 className="text-green-400 text-xl font-semibold mb-4">Revenue</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {loading ? (
-            <p className="text-gray-400 col-span-full text-center"></p>
-          ) : (
-            <>
-              <Card
-                title="Total Revenue"
-                value={`₹${stats.revenue.toLocaleString()}`}
-                className="bg-green-700 hover:bg-green-600 transition"
-              />
-              <Card
-                title="Revenue Last 24h"
-                value={`₹${stats.last24hRevenue.toLocaleString()}`}
-                className="bg-green-600 hover:bg-green-500 transition"
-              />
-              <Card
-                title="Revenue Last 7 Days"
-                value={`₹${stats.last7dRevenue.toLocaleString()}`}
-                className="bg-green-500 hover:bg-green-400 transition"
-              />
-            </>
-          )}
+          <Card title="Total Revenue" value={formatCurrency(stats.revenue)} className="bg-green-700" />
+          <Card title="Last 24h" value={formatCurrency(stats.last24hRevenue)} className="bg-green-600" />
+          <Card title="Last 7 Days" value={formatCurrency(stats.last7dRevenue)} className="bg-green-500" />
+          <Card title="Last 30 Days" value={formatCurrency(stats.last30dRevenue)} className="bg-green-400" />
         </div>
       </section>
 
-      {/* Number of Orders Section */}
       <section>
         <h2 className="text-purple-400 text-xl font-semibold mb-4">Number of Orders</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {loading ? (
-            <p className="text-gray-400 col-span-full text-center"></p>
-          ) : (
-            <>
-              <Card
-                title="Orders Last 24h"
-                value={stats.last24hOrders}
-                className="bg-purple-700 hover:bg-purple-600 transition"
-              />
-              <Card
-                title="Orders Last 7 Days"
-                value={stats.last7dOrders}
-                className="bg-purple-600 hover:bg-purple-500 transition"
-              />
-            </>
-          )}
+          <Card title="Last 24h" value={stats.last24hOrders} className="bg-purple-700" />
+          <Card title="Last 7 Days" value={stats.last7dOrders} className="bg-purple-600" />
+          <Card title="Last 30 Days" value={stats.last30dOrders} className="bg-purple-500" />
         </div>
       </section>
 
-      {/* Payment Method Pie Chart */}
+      <section>
+        <h2 className="text-pink-400 text-xl font-semibold mb-4">Discount Offered</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <Card title="Total Discount" value={formatCurrency(stats.totalDiscount)} className="bg-pink-700" />
+          <Card title="Last 24h" value={formatCurrency(stats.last24hDiscount)} className="bg-pink-600" />
+          <Card title="Last 7 Days" value={formatCurrency(stats.last7dDiscount)} className="bg-pink-500" />
+          <Card title="Last 30 Days" value={formatCurrency(stats.last30dDiscount)} className="bg-pink-400" />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-orange-400 text-xl font-semibold mb-4">Delivery Charges</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <Card title="Total Charges" value={formatCurrency(stats.deliveryCharges)} className="bg-orange-700" />
+          <Card title="Last 24h" value={formatCurrency(stats.last24hDeliveryCharges)} className="bg-orange-600" />
+          <Card title="Last 7 Days" value={formatCurrency(stats.last7dDeliveryCharges)} className="bg-orange-500" />
+          <Card title="Last 30 Days" value={formatCurrency(stats.last30dDeliveryCharges)} className="bg-orange-400" />
+        </div>
+      </section>
+
       <section>
         <h2 className="text-yellow-400 text-xl font-semibold mb-4">Payment Method Distribution</h2>
-        {loading ? (
-          <p className="text-gray-400 text-center"></p>
-        ) : (
-          <div className="max-w-sm mx-auto bg-gray-800 rounded-xl p-4 shadow">
-            <Pie data={pieData} />
-          </div>
-        )}
+        <div className="max-w-sm mx-auto bg-gray-800 rounded-xl p-4 shadow">
+          <Pie data={pieData} />
+        </div>
       </section>
     </div>
   );
