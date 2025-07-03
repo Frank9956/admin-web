@@ -8,9 +8,7 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "engines": {
-    "node": "16.x"
-  },
+  
   "dependencies": {
     "chart.js": "^4.4.9",
     "dotenv": "^16.5.0",
