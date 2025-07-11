@@ -43,12 +43,14 @@ export default function CustomerDetailsTab({ refreshKey }) {
         const phone = normalizePhone(data.phone) || 'N/A';
         const name = data.name || 'Unknown';
         const referralId = data.referralId || '—';
+        const customerId = data.customerId || '—';
         const stats = orderDataByPhone[phone] || { total: 0, count: 0 };
 
         return {
           name,
           phone,
           referralId,
+          customerId,
           orders: stats.count,
           total: stats.total,
         };
@@ -65,6 +67,7 @@ export default function CustomerDetailsTab({ refreshKey }) {
   const exportToExcel = () => {
     const exportData = customers.map(c => ({
       Name: c.name,
+      'customer ID': c.customerId,
       'Phone Number': c.phone,
       'Referral ID': c.referralId,
       'No. of Orders': c.orders,
@@ -107,6 +110,7 @@ export default function CustomerDetailsTab({ refreshKey }) {
             <thead className="bg-gray-700 text-gray-300">
               <tr>
                 <th className="px-4 py-3 border border-gray-600">Name</th>
+                <th className="px-4 py-3 border border-gray-600">Customer ID</th>
                 <th className="px-4 py-3 border border-gray-600">Phone Number</th>
                 <th className="px-4 py-3 border border-gray-600">Referral ID</th>
                 <th className="px-4 py-3 border border-gray-600 text-right">No. of Orders</th>
@@ -117,6 +121,7 @@ export default function CustomerDetailsTab({ refreshKey }) {
               {customers.map((user, idx) => (
                 <tr key={idx} className="even:bg-gray-700">
                   <td className="px-4 py-2 border border-gray-600">{user.name}</td>
+                  <td className="px-4 py-2 border border-gray-600">{user.customerId}</td>
                   <td className="px-4 py-2 border border-gray-600">{user.phone}</td>
                   <td className="px-4 py-2 border border-gray-600">{user.referralId}</td>
                   <td className="px-4 py-2 border border-gray-600 text-right">{user.orders}</td>
