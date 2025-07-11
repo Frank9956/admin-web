@@ -13,6 +13,7 @@ export default function SuperAdminPage() {
   const [password, setPassword] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -22,6 +23,10 @@ export default function SuperAdminPage() {
     } else {
       setError('Invalid email or password');
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
   };
 
   if (!isLoggedIn) {
@@ -34,9 +39,7 @@ export default function SuperAdminPage() {
           <h2 className="text-2xl font-bold mb-6 text-center">Admin Login</h2>
           {error && <p className="mb-4 text-red-500">{error}</p>}
 
-          <label className="block mb-2 font-semibold" htmlFor="email">
-            Email
-          </label>
+          <label className="block mb-2 font-semibold" htmlFor="email">Email</label>
           <input
             id="email"
             type="email"
@@ -47,9 +50,7 @@ export default function SuperAdminPage() {
             placeholder="Enter email"
           />
 
-          <label className="block mb-2 font-semibold" htmlFor="password">
-            Password
-          </label>
+          <label className="block mb-2 font-semibold" htmlFor="password">Password</label>
           <input
             id="password"
             type="password"
@@ -71,12 +72,18 @@ export default function SuperAdminPage() {
     );
   }
 
-  // Show dashboard if logged in
   return (
     <div className="p-6 bg-gray-900 min-h-screen text-gray-100">
-      <h1 className="text-2xl font-bold mb-6">Super Admin Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Super Admin Dashboard</h1>
+        <button
+          onClick={handleRefresh}
+          className="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded shadow"
+        >
+          Refresh
+        </button>
+      </div>
 
-      {/* Tabs */}
       <div className="flex space-x-4 border-b pb-2 mb-6">
         {tabs.map((tab, idx) => (
           <button
@@ -91,10 +98,9 @@ export default function SuperAdminPage() {
         ))}
       </div>
 
-      {/* Tab Content */}
-      {activeTab === 0 && <OrderAnalyticsTab />}
-      {activeTab === 1 && <OrderExcelTab />}
-      {activeTab === 2 && <CustomerDetailsTab />}
+      {activeTab === 0 && <OrderAnalyticsTab refreshKey={refreshKey} />}
+      {activeTab === 1 && <OrderExcelTab refreshKey={refreshKey} />}
+      {activeTab === 2 && <CustomerDetailsTab refreshKey={refreshKey} />}
     </div>
   );
 }

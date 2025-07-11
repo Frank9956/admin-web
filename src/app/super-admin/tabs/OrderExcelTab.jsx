@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 
-export default function OrderExcelTab() {
+export default function OrderExcelTab({ refreshKey }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -26,21 +26,34 @@ export default function OrderExcelTab() {
         setLoading(false);
       }
     }
-    fetchOrders();
-  }, []);
 
-  const updateGoogleSheet = async () => {
-    setUpdating(true);
-    try {
-      const res = await fetch('/api/export/orders');
-      if (!res.ok) throw new Error('Failed to update sheet');
-      alert('✅ Google Sheet updated successfully.');
-    } catch (err) {
-      console.error('Update error:', err);
-      alert('❌ Failed to update Google Sheet.');
-    } finally {
-      setUpdating(false);
-    }
+    fetchOrders();
+  }, [refreshKey]);
+
+  const exportToExcel = () => {
+    const exportData = orders.map(o => ({
+      'Order ID': o.orderId || 'N/A',
+      Address: o.address || 'N/A',
+      Amount: o.paidAmount ? `₹${o.paidAmount}` : '₹0',
+      'Delivery Charges': o.deliveryCharges ? `₹${o.deliveryCharges}` : '₹0',
+      'Total Discount': o.totalDiscount ? `₹${o.totalDiscount}` : '₹0',
+      'Payment Method': o.payment || 'N/A',
+      Status: o.status || 'N/A',
+      'Bill URL': o.orderBillUrl || 'N/A',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(
+      now.getHours()
+    )}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    const fileName = `Orders_${timestamp}.xlsx`;
+
+    XLSX.writeFile(workbook, fileName);
   };
 
   return (
@@ -48,13 +61,10 @@ export default function OrderExcelTab() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Order Details</h2>
         <button
-          onClick={updateGoogleSheet}
-          disabled={updating}
-          className={`${
-            updating ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'
-          } transition text-white px-5 py-2 rounded shadow`}
+          onClick={exportToExcel}
+          className="bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded shadow"
         >
-          {updating ? 'Updating...' : 'Update Google Sheet'}
+          Export to Excel
         </button>
       </div>
 
@@ -70,6 +80,8 @@ export default function OrderExcelTab() {
                 <th className="px-4 py-3 border border-gray-600">Order ID</th>
                 <th className="px-4 py-3 border border-gray-600">Address</th>
                 <th className="px-4 py-3 border border-gray-600">Amount</th>
+                <th className="px-4 py-3 border border-gray-600">Delivery Charges</th>
+                <th className="px-4 py-3 border border-gray-600">Total Discount</th>
                 <th className="px-4 py-3 border border-gray-600">Payment Method</th>
                 <th className="px-4 py-3 border border-gray-600">Status</th>
                 <th className="px-4 py-3 border border-gray-600">Bill PDF</th>
@@ -82,6 +94,12 @@ export default function OrderExcelTab() {
                   <td className="px-4 py-2 border border-gray-600">{order.address || 'N/A'}</td>
                   <td className="px-4 py-2 border border-gray-600">
                     {order.paidAmount ? `₹${order.paidAmount}` : '₹0'}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-600">
+                    {order.deliveryCharges ? `₹${order.deliveryCharges}` : '₹0'}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-600">
+                    {order.totalDiscount ? `₹${order.totalDiscount}` : '₹0'}
                   </td>
                   <td className="px-4 py-2 border border-gray-600">{order.payment || 'N/A'}</td>
                   <td className="px-4 py-2 border border-gray-600 capitalize">{order.status || 'N/A'}</td>

@@ -1,17 +1,20 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 
-export default function CustomerDetailsTab() {
+export default function CustomerDetailsTab({ refreshKey }) {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+
+  // Normalize phone numbers to last 10 digits
+  const normalizePhone = phone => phone?.toString().replace(/\D/g, '').slice(-10);
 
   useEffect(() => {
     fetchCustomerStats();
-  }, []);
+  }, [refreshKey]);
 
   async function fetchCustomerStats() {
     setLoading(true);
@@ -23,21 +26,21 @@ export default function CustomerDetailsTab() {
 
       ordersSnap.forEach(doc => {
         const order = doc.data();
-        const phone = order.phone;
         const paid = parseFloat(order.paidAmount) || 0;
+        const orderPhone = normalizePhone(order.phone);
 
-        if (phone) {
-          if (!orderDataByPhone[phone]) {
-            orderDataByPhone[phone] = { total: 0, count: 0 };
+        if (orderPhone) {
+          if (!orderDataByPhone[orderPhone]) {
+            orderDataByPhone[orderPhone] = { total: 0, count: 0 };
           }
-          orderDataByPhone[phone].total += paid;
-          orderDataByPhone[phone].count += 1;
+          orderDataByPhone[orderPhone].total += paid;
+          orderDataByPhone[orderPhone].count += 1;
         }
       });
 
       const customerList = customersSnap.docs.map(doc => {
         const data = doc.data();
-        const phone = data.phone || 'N/A';
+        const phone = normalizePhone(data.phone) || 'N/A';
         const name = data.name || 'Unknown';
         const referralId = data.referralId || '—';
         const stats = orderDataByPhone[phone] || { total: 0, count: 0 };
@@ -47,7 +50,7 @@ export default function CustomerDetailsTab() {
           phone,
           referralId,
           orders: stats.count,
-          total: `₹${stats.total.toFixed(2)}`,
+          total: stats.total,
         };
       });
 
@@ -59,18 +62,27 @@ export default function CustomerDetailsTab() {
     }
   }
 
-  const updateGoogleSheet = async () => {
-    setUpdating(true);
-    try {
-      const res = await fetch('/api/export/customers');
-      if (!res.ok) throw new Error('Failed to update Google Sheet');
-      alert('✅ Google Sheet updated successfully!');
-    } catch (err) {
-      console.error('Update error:', err);
-      alert('❌ Failed to update Google Sheet.');
-    } finally {
-      setUpdating(false);
-    }
+  const exportToExcel = () => {
+    const exportData = customers.map(c => ({
+      Name: c.name,
+      'Phone Number': c.phone,
+      'Referral ID': c.referralId,
+      'No. of Orders': c.orders,
+      'Total Spent': `₹${c.total.toFixed(2)}`,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
+
+    const now = new Date();
+    const pad = n => n.toString().padStart(2, '0');
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(
+      now.getHours()
+    )}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    const fileName = `Customers_${timestamp}.xlsx`;
+
+    XLSX.writeFile(workbook, fileName);
   };
 
   return (
@@ -78,13 +90,10 @@ export default function CustomerDetailsTab() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-blue-400">Customer Details</h2>
         <button
-          onClick={updateGoogleSheet}
-          disabled={updating}
-          className={`${
-            updating ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'
-          } transition text-white px-5 py-2 rounded shadow`}
+          onClick={exportToExcel}
+          className="bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded shadow"
         >
-          {updating ? 'Updating...' : 'Update Google Sheet'}
+          Export to Excel
         </button>
       </div>
 
@@ -111,7 +120,9 @@ export default function CustomerDetailsTab() {
                   <td className="px-4 py-2 border border-gray-600">{user.phone}</td>
                   <td className="px-4 py-2 border border-gray-600">{user.referralId}</td>
                   <td className="px-4 py-2 border border-gray-600 text-right">{user.orders}</td>
-                  <td className="px-4 py-2 border border-gray-600 text-right">{user.total}</td>
+                  <td className="px-4 py-2 border border-gray-600 text-right">
+                    ₹{user.total.toFixed(2)}
+                  </td>
                 </tr>
               ))}
             </tbody>
