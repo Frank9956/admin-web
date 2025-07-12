@@ -89,7 +89,7 @@ export default function InvoicePage() {
     doc.addImage(logoBase64, "PNG", leftX, 12, logoWidth, logoHeight);
     doc.setFontSize(16);
     doc.setFont(undefined, "bold");
-    doc.text("HABIT US", leftX + logoWidth + 4, 20);
+    doc.text("Habit Us", leftX + logoWidth + 4, 20);
     doc.text("Order Invoice", rightX, 20, { align: "right" });
 
     doc.setFontSize(12);
