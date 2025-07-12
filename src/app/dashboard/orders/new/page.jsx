@@ -53,32 +53,41 @@ export default function NewOrderPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-
+  
     const orderId = `ORD-${uuidv4().slice(0, 6).toUpperCase()}`
     let groceryListImageUrl = ''
     let orderBillUrl = ''
     const customerPhone = form.phone
     const customerRef = doc(db, 'customers', customerPhone)
-
+  
     try {
+      console.log('handleSubmit: Start')
+  
       if (imageFile) {
+        console.log('Uploading image...')
         const imageRef = ref(storage, `orders/${orderId}.jpg`)
         await uploadBytes(imageRef, imageFile)
         groceryListImageUrl = await getDownloadURL(imageRef)
+        console.log('Image uploaded:', groceryListImageUrl)
       }
-
+  
       if (billFile) {
+        console.log('Uploading bill...')
         const billRef = ref(storage, `bills/${orderId}-bill.pdf`)
         await uploadBytes(billRef, billFile)
         orderBillUrl = await getDownloadURL(billRef)
+        console.log('Bill uploaded:', orderBillUrl)
       }
-
+  
+      console.log('Checking customer...')
       const customerSnap = await getDoc(customerRef)
       if (customerSnap.exists()) {
+        console.log('Updating customer...')
         await updateDoc(customerRef, {
           orderCount: (customerSnap.data().orderCount || 0) + 1,
         })
       } else {
+        console.log('Creating customer...')
         await setDoc(customerRef, {
           name: form.customerName,
           address: form.address,
@@ -87,7 +96,8 @@ export default function NewOrderPage() {
           orderCount: 1,
         })
       }
-
+  
+      console.log('Creating order...')
       await setDoc(doc(db, 'orders', orderId), {
         orderId,
         customerName: form.customerName,
@@ -102,16 +112,18 @@ export default function NewOrderPage() {
         totalDiscount: '',
         deliveryCharges: '',
       })
-
+  
+      console.log('Order created, redirecting...')
       router.push('/dashboard/orders')
     } catch (err) {
-      console.error(err)
-      alert('Failed to add order.')
+      console.error('handleSubmit error:', err)
+      alert('Failed to add order. See console for details.')
     } finally {
       setLoading(false)
     }
   }
-
+  
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.removeItem('isAdmin')
@@ -194,7 +206,7 @@ export default function NewOrderPage() {
             <label htmlFor="bill-upload" className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-white font-medium select-none transition">
               Choose File
             </label>
-            <input id="bill-upload" type="file" accept="pdf/*" onChange={(e) => setBillFile(e.target.files?.[0] || null)} className="hidden" />
+            <input id="bill-upload" type="file" accept="application/pdf" onChange={(e) => setBillFile(e.target.files?.[0] || null)} className="hidden" />
             <span className="text-gray-300 italic">{billFile ? billFile.name : 'No file chosen'}</span>
           </div>
         </div>
