@@ -163,7 +163,7 @@ export default function InvoicePage() {
     });
 
     addAmountLine("Total", finalTotal, true, [255, 252, 2]);
-    doc.save(`Habitus_Invoice_${order.orderId || "order"}.pdf`);
+    doc.save(`Invoice_${order.orderId || "order"}.pdf`);
   };
 
   return (
