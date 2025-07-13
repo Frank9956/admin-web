@@ -89,13 +89,13 @@ export default function AdminDashboard() {
         prev.map((o) =>
           o.id === orderId
             ? {
-                ...o,
-                status: newStatus,
-                statusHistory: [
-                  ...(o.statusHistory || []),
-                  { status: newStatus, updatedAt: new Date(), updatedBy },
-                ],
-              }
+              ...o,
+              status: newStatus,
+              statusHistory: [
+                ...(o.statusHistory || []),
+                { status: newStatus, updatedAt: new Date(), updatedBy },
+              ],
+            }
             : o
         )
       )
@@ -211,7 +211,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-<div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
         <div className="bg-blue-800 rounded-lg p-6 shadow">
           <h2 className="text-xl font-semibold mb-2">Total Orders</h2>
           <p className="text-4xl font-bold">{orders.length}</p>
@@ -308,6 +308,19 @@ const OrderCard = ({ order, statuses, updateStatus, showImageIds, setShowImageId
     </p>
     <p><strong>Store ID:</strong> {order.storeId || 'N/A'}</p>
     <p><strong>Delivery Partner ID:</strong> {order.deliveryPartnerId || 'N/A'}</p>
+    {order.mapLink && (
+      <p className="mt-2">
+        <a
+          href={order.mapLink.startsWith('http') ? order.mapLink : `https://${order.mapLink}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 underline"
+        >
+          Map Location
+        </a>
+      </p>
+    )}
+
 
     {order.groceryListImageUrl && (
       <button
@@ -329,19 +342,18 @@ const OrderCard = ({ order, statuses, updateStatus, showImageIds, setShowImageId
 
     <p className="mt-4">
       <strong>Status:</strong>{' '}
-      <span className={`inline-block px-3 py-1 rounded text-sm font-semibold capitalize ${
-        order.status === 'pending'
+      <span className={`inline-block px-3 py-1 rounded text-sm font-semibold capitalize ${order.status === 'pending'
           ? 'bg-yellow-500 text-black'
           : order.status === 'packed'
-          ? 'bg-blue-600 text-white'
-          : order.status === 'not packed'
-          ? 'bg-red-600 text-white'
-          : order.status === 'out for delivery'
-          ? 'bg-orange-500 text-black'
-          : order.status === 'delivered'
-          ? 'bg-green-600 text-white'
-          : 'bg-gray-600 text-white'
-      }`}>
+            ? 'bg-blue-600 text-white'
+            : order.status === 'not packed'
+              ? 'bg-red-600 text-white'
+              : order.status === 'out for delivery'
+                ? 'bg-orange-500 text-black'
+                : order.status === 'delivered'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-600 text-white'
+        }`}>
         {order.status}
       </span>
     </p>
@@ -379,9 +391,8 @@ const OrderCard = ({ order, statuses, updateStatus, showImageIds, setShowImageId
     >
       Status History
       <svg
-        className={`w-4 h-4 transition-transform ${
-          showImageIds[`history-${order.id}`] ? 'rotate-180' : ''
-        }`}
+        className={`w-4 h-4 transition-transform ${showImageIds[`history-${order.id}`] ? 'rotate-180' : ''
+          }`}
         fill="none"
         stroke="currentColor"
         strokeWidth={2}
