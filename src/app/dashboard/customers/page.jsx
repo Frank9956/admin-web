@@ -46,6 +46,7 @@ export default function CustomersListPage() {
       orderCount: customer.orderCount || '',
       customerId: customer.customerId || '',
       referralId: customer.referralId || '',
+      mapLink: customer.mapLink || '',
     })
   }
 
@@ -141,6 +142,13 @@ export default function CustomersListPage() {
                     placeholder="Referral ID"
                     className="w-full mb-2 px-3 py-2 rounded bg-gray-700 text-white"
                   />
+                  <input
+                    name="mapLink"
+                    value={editForm.mapLink}
+                    onChange={handleEditChange}
+                    placeholder="Map Location"
+                    className="w-full mb-2 px-3 py-2 rounded bg-gray-700 text-white"
+                  />
                   <div className="flex gap-3 mt-2">
                     <button onClick={() => saveEdit(customer.id)} className="bg-green-600 px-4 py-2 rounded">
                       Save
@@ -158,6 +166,19 @@ export default function CustomersListPage() {
                   <p><strong>Customer ID:</strong> {customer.customerId}</p>
                   <p><strong>Orders:</strong> {customer.orderCount || 0}</p>
                   <p><strong>Referral ID:</strong> {customer.referralId || 0}</p>
+                  {customer.mapLink && (
+                    <p>
+                      <strong>Map Link:</strong>{' '}
+                      <a
+                        href={customer.mapLink.startsWith('http') ? customer.mapLink : `https://${customer.mapLink}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 underline"
+                      >
+                        View Location
+                      </a>
+                    </p>
+                  )}
 
                   <div className="absolute top-3 right-3 flex gap-2">
                     <button

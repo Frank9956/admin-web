@@ -21,6 +21,7 @@ export default function NewOrderPage() {
     customerName: '',
     address: '',
     phone: '',
+    mapLink: '',
     storeId: '',
     deliveryPartnerId: '',
   })
@@ -44,6 +45,7 @@ export default function NewOrderPage() {
         ...prev,
         customerName: customer.name,
         address: customer.address,
+        mapLink: customer.mapLink,
       }))
     } else {
       console.log('New customer')
@@ -53,16 +55,16 @@ export default function NewOrderPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-  
+
     const orderId = `ORD-${uuidv4().slice(0, 6).toUpperCase()}`
     let groceryListImageUrl = ''
     let orderBillUrl = ''
     const customerPhone = form.phone
     const customerRef = doc(db, 'customers', customerPhone)
-  
+
     try {
       console.log('handleSubmit: Start')
-  
+
       if (imageFile) {
         console.log('Uploading image...')
         const imageRef = ref(storage, `orders/${orderId}.jpg`)
@@ -70,7 +72,7 @@ export default function NewOrderPage() {
         groceryListImageUrl = await getDownloadURL(imageRef)
         console.log('Image uploaded:', groceryListImageUrl)
       }
-  
+
       if (billFile) {
         console.log('Uploading bill...')
         const billRef = ref(storage, `bills/${orderId}-bill.pdf`)
@@ -78,7 +80,7 @@ export default function NewOrderPage() {
         orderBillUrl = await getDownloadURL(billRef)
         console.log('Bill uploaded:', orderBillUrl)
       }
-  
+
       console.log('Checking customer...')
       const customerSnap = await getDoc(customerRef)
       if (customerSnap.exists()) {
@@ -92,17 +94,19 @@ export default function NewOrderPage() {
           name: form.customerName,
           address: form.address,
           phone: form.phone,
+          mapLink: form.mapLink,
           customerId: `CUS-${uuidv4().slice(0, 6).toUpperCase()}`,
           orderCount: 1,
         })
       }
-  
+
       console.log('Creating order...')
       await setDoc(doc(db, 'orders', orderId), {
         orderId,
         customerName: form.customerName,
         address: form.address,
         phone: form.phone,
+        mapLink: form.mapLink,
         storeId: form.storeId,
         deliveryPartnerId: form.deliveryPartnerId,
         groceryListImageUrl,
@@ -112,7 +116,7 @@ export default function NewOrderPage() {
         totalDiscount: '',
         deliveryCharges: '',
       })
-  
+
       console.log('Order created, redirecting...')
       router.push('/dashboard/orders')
     } catch (err) {
@@ -122,8 +126,8 @@ export default function NewOrderPage() {
       setLoading(false)
     }
   }
-  
-  
+
+
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.removeItem('isAdmin')
@@ -175,6 +179,15 @@ export default function NewOrderPage() {
             className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
           />
         ))}
+
+        <input
+          name="mapLink"
+          placeholder="Google Map Link"
+          value={form.mapLink}
+          onChange={handleChange}
+          required
+          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+        />
 
 
         {[{ name: 'storeId', placeholder: 'Store User ID' }, { name: 'deliveryPartnerId', placeholder: 'Delivery Partner ID' }].map(({ name, placeholder }) => (
