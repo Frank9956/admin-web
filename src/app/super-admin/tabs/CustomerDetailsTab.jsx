@@ -28,7 +28,8 @@ export default function CustomerDetailsTab({ refreshKey }) {
         const order = doc.data();
         const paid = parseFloat(order.paidAmount) || 0;
         const orderPhone = normalizePhone(order.phone);
-
+        
+        
         if (orderPhone) {
           if (!orderDataByPhone[orderPhone]) {
             orderDataByPhone[orderPhone] = { total: 0, count: 0 };
@@ -37,7 +38,7 @@ export default function CustomerDetailsTab({ refreshKey }) {
           orderDataByPhone[orderPhone].count += 1;
         }
       });
-
+      
       const customerList = customersSnap.docs.map(doc => {
         const data = doc.data();
         const phone = normalizePhone(data.phone) || 'N/A';
@@ -45,7 +46,8 @@ export default function CustomerDetailsTab({ refreshKey }) {
         const referralId = data.referralId || '—';
         const customerId = data.customerId || '—';
         const stats = orderDataByPhone[phone] || { total: 0, count: 0 };
-
+        const mapLink = data.mapLink || '';
+        
         return {
           name,
           phone,
@@ -53,6 +55,7 @@ export default function CustomerDetailsTab({ refreshKey }) {
           customerId,
           orders: stats.count,
           total: stats.total,
+          mapLink,
         };
       });
 
@@ -65,28 +68,42 @@ export default function CustomerDetailsTab({ refreshKey }) {
   }
 
   const exportToExcel = () => {
-    const exportData = customers.map(c => ({
+    const exportData = customers.map((c, i) => ({
       Name: c.name,
-      'customer ID': c.customerId,
+      'Customer ID': c.customerId,
       'Phone Number': c.phone,
       'Referral ID': c.referralId,
       'No. of Orders': c.orders,
       'Total Spent': `₹${c.total.toFixed(2)}`,
+      'Map Location': c.mapLink ? 'Map Location' : 'N/A', // display text
     }));
-
+  
     const worksheet = XLSX.utils.json_to_sheet(exportData);
+    
+    // Add hyperlinks manually
+    customers.forEach((c, idx) => {
+      if (c.mapLink) {
+        const cellAddress = `G${idx + 2}`; // G column, +2 because of header row
+        worksheet[cellAddress].l = {
+          Target: c.mapLink.startsWith('http') ? c.mapLink : `https://${c.mapLink}`,
+          Tooltip: 'Open Map Location',
+        };
+      }
+    });
+  
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
-
+  
     const now = new Date();
     const pad = n => n.toString().padStart(2, '0');
     const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(
       now.getHours()
     )}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
     const fileName = `Customers_${timestamp}.xlsx`;
-
+  
     XLSX.writeFile(workbook, fileName);
   };
+  
 
   return (
     <div className="p-8 mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
@@ -115,6 +132,8 @@ export default function CustomerDetailsTab({ refreshKey }) {
                 <th className="px-4 py-3 border border-gray-600">Referral ID</th>
                 <th className="px-4 py-3 border border-gray-600 text-right">No. of Orders</th>
                 <th className="px-4 py-3 border border-gray-600 text-right">Total Spent</th>
+                <th className="px-4 py-3 border border-gray-600">Map Location</th>
+
               </tr>
             </thead>
             <tbody>
@@ -128,6 +147,21 @@ export default function CustomerDetailsTab({ refreshKey }) {
                   <td className="px-4 py-2 border border-gray-600 text-right">
                     ₹{user.total.toFixed(2)}
                   </td>
+                  <td className="px-4 py-2 border border-gray-600">
+                    {user.mapLink ? (
+                      <a
+                        href={user.mapLink.startsWith('http') ? user.mapLink : `https://${user.mapLink}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 underline"
+                      >
+                        Map Location
+                      </a>
+                    ) : (
+                      'N/A'
+                    )}
+                  </td>
+
                 </tr>
               ))}
             </tbody>

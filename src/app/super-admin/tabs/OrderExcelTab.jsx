@@ -32,6 +32,10 @@ export default function OrderExcelTab({ refreshKey }) {
 
   const exportToExcel = () => {
     const exportData = orders.map(o => ({
+      'Created At': o.createdAt?.toDate
+        ? o.createdAt.toDate().toLocaleString()
+        : 'N/A',
+
       'Order ID': o.orderId || 'N/A',
       Address: o.address || 'N/A',
       Amount: o.paidAmount ? `₹${o.paidAmount}` : '₹0',
@@ -39,7 +43,9 @@ export default function OrderExcelTab({ refreshKey }) {
       'Total Discount': o.totalDiscount ? `₹${o.totalDiscount}` : '₹0',
       'Payment Method': o.payment || 'N/A',
       Status: o.status || 'N/A',
-      'Bill URL': o.orderBillUrl || 'N/A',
+      'Bill PDF': o.orderBillUrl
+        ? { f: `HYPERLINK("${o.orderBillUrl}", "Bill PDF")` }
+        : 'N/A',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -77,6 +83,7 @@ export default function OrderExcelTab({ refreshKey }) {
           <table className="w-full text-sm text-left border-collapse border border-gray-700">
             <thead className="bg-gray-700 text-gray-300">
               <tr>
+                <th className="px-4 py-3 border border-gray-600">Created At</th>
                 <th className="px-4 py-3 border border-gray-600">Order ID</th>
                 <th className="px-4 py-3 border border-gray-600">Address</th>
                 <th className="px-4 py-3 border border-gray-600">Amount</th>
@@ -90,6 +97,13 @@ export default function OrderExcelTab({ refreshKey }) {
             <tbody>
               {orders.map(order => (
                 <tr key={order.id} className="even:bg-gray-700">
+
+                  <td className="px-4 py-2 border border-gray-600">
+                    {order.createdAt?.toDate
+                      ? new Date(order.createdAt.toDate()).toLocaleString()
+                      : 'N/A'}
+                  </td>
+
                   <td className="px-4 py-2 border border-gray-600">{order.orderId || 'N/A'}</td>
                   <td className="px-4 py-2 border border-gray-600">{order.address || 'N/A'}</td>
                   <td className="px-4 py-2 border border-gray-600">
