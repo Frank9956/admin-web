@@ -106,7 +106,9 @@ export default function InvoicePage() {
     doc.setFont(undefined, "normal");
     doc.text(`Order ID: ${order.orderId}`, leftX, 30);
     doc.text(`Name: ${order.name}`, leftX, 38);
-    doc.text(`Address: ${order.address}`, leftX, 46);
+    // Wrap long address into multiple lines
+    const addressLines = doc.splitTextToSize(`Address: ${order.address}`, 80);
+    doc.text(addressLines, leftX, 46);
     doc.text(`Phone: ${order.phone}`, leftX, 62);
     doc.text(`Total Bill: Rs  ${finalTotal.toFixed(2)}`, rightX, 30, { align: "right" });
     doc.text(`Payment Mode: ${order.paymentMode}`, rightX, 38, { align: "right" });
