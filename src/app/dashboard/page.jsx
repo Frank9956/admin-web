@@ -261,6 +261,9 @@ export default function AdminDashboard() {
         <Link href="/dashboard/invoice" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
           Invoice
         </Link>
+        <Link href="/dashboard/catalog" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
+          Catalog
+        </Link>
       </div>
 
       {/* Active Orders */}
