@@ -1,6 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase/firebase';
+import { FiEdit } from "react-icons/fi";
+import { FiTrash2 } from "react-icons/fi";
+
 import {
   collection,
   getDocs,
@@ -19,8 +22,8 @@ export default function CatalogAdminPage() {
   const [formData, setFormData] = useState({});
   const [editMode, setEditMode] = useState({ type: null, id: null });
 
-  const defaultImage =
-    'https://via.placeholder.com/150?text=No+Image';
+  const defaultImage = 'https://i.ibb.co/w2R7kvD/Habit-us.png';
+
 
   // Fetch categories and products
   const fetchCategories = async () => {
@@ -96,11 +99,26 @@ export default function CatalogAdminPage() {
   };
 
   const handleDelete = async (type, id) => {
-    const ref = doc(db, type === 'category' ? 'categories' : 'products', id);
-    await deleteDoc(ref);
-    if (type === 'category') fetchCategories();
-    else fetchProducts();
+    const userInput = prompt(`Type "confirm" to delete this ${type}:`);
+    
+    if (userInput && userInput.toLowerCase() === "confirm") {
+      try {
+        const ref = doc(db, type === 'category' ? 'categories' : 'products', id);
+        await deleteDoc(ref);
+  
+        if (type === 'category') fetchCategories();
+        else fetchProducts();
+  
+        alert(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully.`);
+      } catch (error) {
+        console.error("Error deleting:", error);
+        alert("Failed to delete. Please try again.");
+      }
+    } else {
+      alert("Deletion cancelled. You must type 'confirm' to proceed.");
+    }
   };
+  
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -123,40 +141,40 @@ export default function CatalogAdminPage() {
           <div
             key={cat.id}
             onClick={() => setSelectedCategory(cat.name)}
-            className={`p-3 border rounded-lg cursor-pointer min-w-[150px] flex flex-col items-center ${
-              selectedCategory === cat.name
-                ? 'bg-green-600'
+            className={`p-3 rounded-lg cursor-pointer min-w-[150px] flex flex-col items-center transition-colors duration-200 ${selectedCategory === cat.name
+                ? 'bg-gray-700' // darker shade for selected
                 : 'bg-gray-800 hover:bg-gray-700'
-            }`}
+              }`}
           >
             <img
               src={cat.image}
-              className="w-16 h-16 object-cover rounded-full mb-2 border"
+              className="w-16 h-16 object-cover rounded-full mb-2"
             />
-            <span className="text-sm">{cat.name}</span>
-            <div className="flex space-x-2 mt-2">
+            <span className="text-sm font-bold">{cat.name}</span>
+            <div className="flex space-x-2 mt-2 font-bold">
               <button
-                className="text-xs bg-yellow-500 px-2 rounded"
+                className="text-xs bg-green-600 p-1 rounded flex items-center justify-center"
                 onClick={e => {
                   e.stopPropagation();
                   handleEdit('category', cat);
                 }}
               >
-                Edit
+                <FiEdit size={20} />
               </button>
               <button
-                className="text-xs bg-red-600 px-2 rounded"
+                className="text-xs bg-red-600 p-1 rounded flex items-center justify-center"
                 onClick={e => {
                   e.stopPropagation();
                   handleDelete('category', cat.id);
                 }}
               >
-                Delete
+                <FiTrash2 size={20} />
               </button>
             </div>
           </div>
         ))}
       </div>
+
 
       {/* Product section */}
       <div className="flex items-center justify-between mb-6">
@@ -172,38 +190,55 @@ export default function CatalogAdminPage() {
           Add Product
         </button>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
         {products
           .filter(p => p.category === selectedCategory)
           .map(product => (
             <div
               key={product.id}
-              className="bg-gray-800 p-4 rounded shadow flex flex-col items-center"
+              className="bg-gray-800 p-2 rounded shadow w-full max-w-[200px] flex flex-col"
             >
-              <img
-                src={product.image}
-                className="w-full aspect-square object-cover rounded mb-2"
-              />
-              <h3 className="font-bold">{product.name}</h3>
-              <p className="text-xs text-gray-400">{product.weight}</p>
-              <p className="font-semibold text-green-300">₹{product.price}</p>
-              <div className="flex space-x-2 mt-2">
-                <button
-                  className="text-xs bg-yellow-500 px-2 rounded"
-                  onClick={() => handleEdit('product', product)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="text-xs bg-red-600 px-2 rounded"
-                  onClick={() => handleDelete('product', product.id)}
-                >
-                  Delete
-                </button>
+              {/* Product Image */}
+              <div className="w-full aspect-square bg-gray-700 rounded flex items-center justify-center mb-2">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-contain rounded"
+                />
+              </div>
+
+              {/* Info + Actions Row */}
+              <div className="bg-gray-900 p-2 rounded flex items-center justify-between">
+                {/* Left side */}
+                <div className="flex flex-col text-left">
+                  <h3 className="font-bold text-base truncate">{product.name}</h3>
+                  <p className="text-sm text-gray-400">{product.weight}</p>
+                  <p className="font-semibold text-green-300 text-base">₹{product.price}</p>
+
+                </div>
+
+                {/* Right side */}
+                <div className="flex flex-col space-y-1">
+                  <button
+                    className="bg-green-600 p-1 rounded flex items-center justify-center"
+                    onClick={() => handleEdit('product', product)}
+                    title="Edit"
+                  >
+                    <FiEdit size={20} />
+                  </button>
+                  <button
+                    className="bg-red-600 p-1 rounded flex items-center justify-center"
+                    onClick={() => handleDelete('product', product.id)}
+                    title="Delete"
+                  >
+                    <FiTrash2 size={20} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
       </div>
+
 
       {/* Category Modal */}
       {showCategoryModal && (
