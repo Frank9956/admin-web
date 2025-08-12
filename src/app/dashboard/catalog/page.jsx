@@ -1,9 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase/firebase';
-import { FiEdit } from "react-icons/fi";
-import { FiTrash2 } from "react-icons/fi";
-
+import { FiEdit, FiTrash2 } from "react-icons/fi";
 import {
   collection,
   getDocs,
@@ -24,8 +22,7 @@ export default function CatalogAdminPage() {
 
   const defaultImage = 'https://i.ibb.co/w2R7kvD/Habit-us.png';
 
-
-  // Fetch categories and products
+  // Fetch categories
   const fetchCategories = async () => {
     const snapshot = await getDocs(collection(db, 'categories'));
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -35,6 +32,7 @@ export default function CatalogAdminPage() {
     }
   };
 
+  // Fetch products
   const fetchProducts = async () => {
     const snapshot = await getDocs(collection(db, 'products'));
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -46,17 +44,22 @@ export default function CatalogAdminPage() {
     fetchProducts();
   }, []);
 
-  // Form handlers
+  // Handle input changes
   const handleChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
+  // Save category
   const handleSaveCategory = async () => {
     if (!formData.name) return alert('Name is required!');
     const data = {
       name: formData.name,
       image: formData.image || defaultImage,
+      priority: parseInt(formData.priority) || 100,
     };
     if (editMode.type === 'category') {
       await updateDoc(doc(db, 'categories', editMode.id), data);
@@ -69,28 +72,47 @@ export default function CatalogAdminPage() {
     fetchCategories();
   };
 
+  // Save product
+  // Generate random product ID like p-XXXXX
+  const generateProductId = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 5; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `P${result}`;
+  };
+
   const handleSaveProduct = async () => {
-    const { name, image, price, weight, category } = formData;
+    const { name, image, price, weight, category, stock, recommended, productId } = formData;
     if (!name || !price || !weight || !category)
       return alert('All fields except image are required!');
+
     const data = {
+      productId: productId || generateProductId(), // Auto-generate if empty
       name,
       image: image || defaultImage,
       price: parseFloat(price),
       weight,
       category,
+      stock: parseInt(stock) || 0,
+      recommended: !!recommended,
     };
+
     if (editMode.type === 'product') {
       await updateDoc(doc(db, 'products', editMode.id), data);
     } else {
       await addDoc(collection(db, 'products'), data);
     }
+
     setFormData({});
     setEditMode({ type: null, id: null });
     setShowProductModal(false);
     fetchProducts();
   };
 
+
+  // Edit
   const handleEdit = (type, item) => {
     setFormData(item);
     setEditMode({ type, id: item.id });
@@ -98,17 +120,15 @@ export default function CatalogAdminPage() {
     else setShowProductModal(true);
   };
 
+  // Delete
   const handleDelete = async (type, id) => {
     const userInput = prompt(`Type "confirm" to delete this ${type}:`);
-    
     if (userInput && userInput.toLowerCase() === "confirm") {
       try {
         const ref = doc(db, type === 'category' ? 'categories' : 'products', id);
         await deleteDoc(ref);
-  
         if (type === 'category') fetchCategories();
         else fetchProducts();
-  
         alert(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully.`);
       } catch (error) {
         console.error("Error deleting:", error);
@@ -118,11 +138,10 @@ export default function CatalogAdminPage() {
       alert("Deletion cancelled. You must type 'confirm' to proceed.");
     }
   };
-  
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
-      {/* Category section */}
+      {/* Categories */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-green-400">Categories</h2>
         <button
@@ -136,21 +155,21 @@ export default function CatalogAdminPage() {
           Add Category
         </button>
       </div>
-      <div className="flex space-x-4 mb-8 overflow-x-auto">
+      <div className="flex space-x-4 mb-8 hide-scrollbar whitespace-nowrap overflow-x-auto">
         {categories.map(cat => (
           <div
             key={cat.id}
             onClick={() => setSelectedCategory(cat.name)}
             className={`p-3 rounded-lg cursor-pointer min-w-[150px] flex flex-col items-center transition-colors duration-200 ${selectedCategory === cat.name
-                ? 'bg-gray-700' // darker shade for selected
-                : 'bg-gray-800 hover:bg-gray-700'
+              ? 'bg-gray-700'
+              : 'bg-gray-800 hover:bg-gray-700'
               }`}
           >
-            <img
-              src={cat.image}
-              className="w-16 h-16 object-cover rounded-full mb-2"
-            />
-            <span className="text-sm font-bold">{cat.name}</span>
+            <img src={cat.image} className="w-16 h-16 object-cover rounded-full mb-2" />
+            <span className="text-sm font-bold truncate block max-w-[150px]">
+              {cat.name}
+            </span>
+            <p className="text-xs text-gray-400">Priority: {cat.priority ?? 0}</p>
             <div className="flex space-x-2 mt-2 font-bold">
               <button
                 className="text-xs bg-green-600 p-1 rounded flex items-center justify-center"
@@ -175,8 +194,7 @@ export default function CatalogAdminPage() {
         ))}
       </div>
 
-
-      {/* Product section */}
+      {/* Products */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-green-400">Products</h2>
         <button
@@ -198,26 +216,17 @@ export default function CatalogAdminPage() {
               key={product.id}
               className="bg-gray-800 p-2 rounded shadow w-full max-w-[200px] flex flex-col"
             >
-              {/* Product Image */}
               <div className="w-full aspect-square bg-gray-700 rounded flex items-center justify-center mb-2">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-contain rounded"
-                />
+                <img src={product.image} alt={product.name} className="w-full h-full object-contain rounded" />
               </div>
-
-              {/* Info + Actions Row */}
               <div className="bg-gray-900 p-2 rounded flex items-center justify-between">
-                {/* Left side */}
                 <div className="flex flex-col text-left">
-                  <h3 className="font-bold text-base truncate">{product.name}</h3>
+                  <h3 className="font-bold text-base line-clamp-2">{product.name}</h3>
                   <p className="text-sm text-gray-400">{product.weight}</p>
                   <p className="font-semibold text-green-300 text-base">₹{product.price}</p>
-
+                  <p className="text-xs text-gray-400">Stock: {product.stock ?? 0}</p>
+                  {product.recommended && <span className="text-xs text-yellow-400">⭐ Recommended</span>}
                 </div>
-
-                {/* Right side */}
                 <div className="flex flex-col space-y-1">
                   <button
                     className="bg-green-600 p-1 rounded flex items-center justify-center"
@@ -238,7 +247,6 @@ export default function CatalogAdminPage() {
             </div>
           ))}
       </div>
-
 
       {/* Category Modal */}
       {showCategoryModal && (
@@ -261,19 +269,17 @@ export default function CatalogAdminPage() {
               onChange={handleChange}
               className="w-full mb-3 p-2 bg-gray-700 rounded"
             />
+            <input
+              name="priority"
+              type="number"
+              placeholder="Priority (0 default)"
+              value={formData.priority ?? ''}
+              onChange={handleChange}
+              className="w-full mb-3 p-2 bg-gray-700 rounded"
+            />
             <div className="flex justify-end space-x-3">
-              <button
-                className="bg-gray-600 px-4 py-2 rounded"
-                onClick={() => setShowCategoryModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="bg-green-600 px-4 py-2 rounded"
-                onClick={handleSaveCategory}
-              >
-                Save
-              </button>
+              <button className="bg-gray-600 px-4 py-2 rounded" onClick={() => setShowCategoryModal(false)}>Cancel</button>
+              <button className="bg-green-600 px-4 py-2 rounded" onClick={handleSaveCategory}>Save</button>
             </div>
           </div>
         </div>
@@ -286,6 +292,14 @@ export default function CatalogAdminPage() {
             <h3 className="text-xl font-bold mb-4">
               {editMode.type === 'product' ? 'Edit' : 'Add'} Product
             </h3>
+            <input
+              name="productId"
+              placeholder="Product ID (auto-generated if empty)"
+              value={formData.productId || ''}
+              onChange={handleChange}
+              className="w-full mb-3 p-2 bg-gray-700 rounded"
+            />
+
             <input
               name="name"
               placeholder="Product Name"
@@ -315,6 +329,23 @@ export default function CatalogAdminPage() {
               onChange={handleChange}
               className="w-full mb-3 p-2 bg-gray-700 rounded"
             />
+            <input
+              name="stock"
+              type="number"
+              placeholder="Stock"
+              value={formData.stock || ''}
+              onChange={handleChange}
+              className="w-full mb-3 p-2 bg-gray-700 rounded"
+            />
+            <label className="flex items-center space-x-2 mb-3">
+              <input
+                type="checkbox"
+                name="recommended"
+                checked={!!formData.recommended}
+                onChange={handleChange}
+              />
+              <span>Recommended</span>
+            </label>
             <select
               name="category"
               value={formData.category || ''}
@@ -323,24 +354,12 @@ export default function CatalogAdminPage() {
             >
               <option value="">Select Category</option>
               {categories.map(cat => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
+                <option key={cat.id} value={cat.name}>{cat.name}</option>
               ))}
             </select>
             <div className="flex justify-end space-x-3">
-              <button
-                className="bg-gray-600 px-4 py-2 rounded"
-                onClick={() => setShowProductModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="bg-green-600 px-4 py-2 rounded"
-                onClick={handleSaveProduct}
-              >
-                Save
-              </button>
+              <button className="bg-gray-600 px-4 py-2 rounded" onClick={() => setShowProductModal(false)}>Cancel</button>
+              <button className="bg-green-600 px-4 py-2 rounded" onClick={handleSaveProduct}>Save</button>
             </div>
           </div>
         </div>
