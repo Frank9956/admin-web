@@ -26,19 +26,23 @@ export default function CatalogAdminPage() {
   const fetchCategories = async () => {
     const snapshot = await getDocs(collection(db, 'categories'));
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Sort by priority ascending (lowest first)
+    data.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
     setCategories(data);
     if (!selectedCategory && data.length > 0) {
       setSelectedCategory(data[0].name);
     }
   };
+  
 
-  // Fetch products
   const fetchProducts = async () => {
     const snapshot = await getDocs(collection(db, 'products'));
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Sort by product name alphabetically
+    data.sort((a, b) => a.name.localeCompare(b.name));
     setProducts(data);
   };
-
+  
   useEffect(() => {
     fetchCategories();
     fetchProducts();
@@ -95,7 +99,7 @@ export default function CatalogAdminPage() {
       price: parseFloat(price),
       weight,
       category,
-      stock: parseInt(stock) || 0,
+      stock: parseInt(stock) || 1,
       recommended: !!recommended,
     };
 
