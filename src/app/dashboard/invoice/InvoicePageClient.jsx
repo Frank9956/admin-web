@@ -1,6 +1,6 @@
 // app/dashboard/invoice/page.jsx
 import { Suspense } from "react";
-import InvoicePageClient from "./page.jsx";
+import InvoicePageClient from "./page";
 
 export default function InvoicePage() {
   return (
