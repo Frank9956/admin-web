@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { db, storage } from '@/lib/firebase/firebase'
 import {
-  addDoc,
-  collection,
   doc,
   getDoc,
   setDoc,
@@ -21,13 +19,21 @@ export default function NewOrderPage() {
     customerName: '',
     address: '',
     phone: '',
-    mapLink: '',
+    mapLink: '.',
     storeId: '',
     deliveryPartnerId: '',
+    couponCode: '',
+    addressType: 'myself',
+    friendFamilyName: '',
+    friendFamilyPhone: '',
+    deliveryType: '',
   })
   const [imageFile, setImageFile] = useState(null)
   const [billFile, setBillFile] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  const [productList, setProductList] = useState([])
+  const [suggestions, setSuggestion] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -63,33 +69,24 @@ export default function NewOrderPage() {
     const customerRef = doc(db, 'customers', customerPhone)
 
     try {
-      console.log('handleSubmit: Start')
-
       if (imageFile) {
-        console.log('Uploading image...')
         const imageRef = ref(storage, `orders/${orderId}.jpg`)
         await uploadBytes(imageRef, imageFile)
         groceryListImageUrl = await getDownloadURL(imageRef)
-        console.log('Image uploaded:', groceryListImageUrl)
       }
 
       if (billFile) {
-        console.log('Uploading bill...')
         const billRef = ref(storage, `bills/${orderId}-bill.pdf`)
         await uploadBytes(billRef, billFile)
         orderBillUrl = await getDownloadURL(billRef)
-        console.log('Bill uploaded:', orderBillUrl)
       }
 
-      console.log('Checking customer...')
       const customerSnap = await getDoc(customerRef)
       if (customerSnap.exists()) {
-        console.log('Updating customer...')
         await updateDoc(customerRef, {
           orderCount: (customerSnap.data().orderCount || 0) + 1,
         })
       } else {
-        console.log('Creating customer...')
         await setDoc(customerRef, {
           name: form.customerName,
           address: form.address,
@@ -100,7 +97,6 @@ export default function NewOrderPage() {
         })
       }
 
-      console.log('Creating order...')
       await setDoc(doc(db, 'orders', orderId), {
         orderId,
         customerName: form.customerName,
@@ -109,15 +105,22 @@ export default function NewOrderPage() {
         mapLink: form.mapLink,
         storeId: form.storeId,
         deliveryPartnerId: form.deliveryPartnerId,
+        couponCode: form.couponCode,
+        addressType: form.addressType,
+        friendFamilyName: form.addressType === 'friends_family' ? form.friendFamilyName : '',
+        friendFamilyPhone: form.addressType === 'friends_family' ? form.friendFamilyPhone : '',
+        deliveryType: form.deliveryType,
         groceryListImageUrl,
         orderBillUrl,
         status: 'pending',
         createdAt: new Date(),
         totalDiscount: '',
         deliveryCharges: '',
+        // Save productList and suggestions also
+        productList,
+        suggestions,
       })
 
-      console.log('Order created, redirecting...')
       router.push('/dashboard/orders')
     } catch (err) {
       console.error('handleSubmit error:', err)
@@ -126,7 +129,16 @@ export default function NewOrderPage() {
       setLoading(false)
     }
   }
-
+  useEffect(() => {
+    const data = localStorage.getItem('newOrderData')
+    if (data) {
+      const parsed = JSON.parse(data)
+      setForm(parsed)
+      setProductList(parsed.productList || [])
+      setSuggestion(parsed.suggestions || '')
+      localStorage.removeItem('newOrderData')
+    }
+  }, [])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -158,7 +170,10 @@ export default function NewOrderPage() {
 
       <h1 className="text-3xl font-bold mb-8">Create New Order</h1>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
+
       <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
+        {/* Phone input with customer autofill */}
         <input
           name="phone"
           placeholder="Phone Number"
@@ -168,17 +183,24 @@ export default function NewOrderPage() {
           required
           className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
         />
-        {[{ name: 'customerName', placeholder: 'Customer Name' }, { name: 'address', placeholder: 'Address' }].map(({ name, placeholder }) => (
-          <input
-            key={name}
-            name={name}
-            placeholder={placeholder}
-            value={form[name]}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-          />
-        ))}
+
+        {/* Customer Name + Address */}
+        <input
+          name="customerName"
+          placeholder="Customer Name"
+          value={form.customerName}
+          onChange={handleChange}
+          required
+          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+        />
+        <input
+          name="address"
+          placeholder="Address"
+          value={form.address}
+          onChange={handleChange}
+          required
+          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+        />
 
         <input
           name="mapLink"
@@ -189,19 +211,77 @@ export default function NewOrderPage() {
           className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
         />
 
+        {/* Coupon Code */}
+        <input
+          name="couponCode"
+          placeholder="Coupon Code"
+          value={form.couponCode}
+          onChange={handleChange}
+          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+        />
 
-        {[{ name: 'storeId', placeholder: 'Store User ID' }, { name: 'deliveryPartnerId', placeholder: 'Delivery Partner ID' }].map(({ name, placeholder }) => (
-          <input
-            key={name}
-            name={name}
-            placeholder={placeholder}
-            value={form[name]}
+        {/* Address Type */}
+        <div>
+          <label className="block mb-2 font-semibold">Address Type:</label>
+          <select
+            name="addressType"
+            value={form.addressType}
             onChange={handleChange}
-            required
-            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-          />
-        ))}
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100"
+          >
+            <option value="myself">Myself</option>
+            <option value="friends_family">Friends / Family</option>
+          </select>
+        </div>
 
+        {/* Extra fields for friends/family */}
+        {form.addressType === 'friends_family' && (
+          <>
+            <input
+              name="friendFamilyName"
+              placeholder="Friend/Family Name"
+              value={form.friendFamilyName}
+              onChange={handleChange}
+              className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+            />
+            <input
+              name="friendFamilyPhone"
+              placeholder="Friend/Family Phone"
+              value={form.friendFamilyPhone}
+              onChange={handleChange}
+              className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+            />
+          </>
+        )}
+
+        {/* Delivery Type */}
+        <input
+          name="deliveryType"
+          placeholder="Delivery Type (e.g. Same Day, Express)"
+          value={form.deliveryType}
+          onChange={handleChange}
+          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+        />
+
+        {/* Store + Delivery Partner IDs */}
+        <input
+          name="storeId"
+          placeholder="Store User ID"
+          value={form.storeId}
+          onChange={handleChange}
+          required
+          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+        />
+        <input
+          name="deliveryPartnerId"
+          placeholder="Delivery Partner ID"
+          value={form.deliveryPartnerId}
+          onChange={handleChange}
+          required
+          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+        />
+
+        {/* File Uploads */}
         <div>
           <label className="block mb-2 font-semibold">Grocery List Photo:</label>
           <div className="flex items-center gap-4">
@@ -224,6 +304,7 @@ export default function NewOrderPage() {
           </div>
         </div>
 
+        {/* Submit + Cancel */}
         <div className="flex gap-4 mt-6">
           <button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700 transition px-6 py-2 rounded font-semibold disabled:opacity-50">
             {loading ? 'Submitting...' : 'Add Order'}
@@ -234,6 +315,30 @@ export default function NewOrderPage() {
           </button>
         </div>
       </form>
+
+      {/* Right Side: Product List + suggestions */}
+      <div className="bg-gray-800 p-6 rounded space-y-4">
+          <h2 className="text-xl font-semibold">Products</h2>
+          {productList.length > 0 ? (
+            <ul className="space-y-2">
+              {productList.map((p, idx) => (
+                <li key={idx} className="flex justify-between border-b border-gray-600 pb-2">
+                  <span>{p.name} - {p.weight} - ₹{p.price} × {p.quantity}</span>
+                  <span className="font-bold">₹{p.total}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-400 italic">No products added.</p>
+          )}
+
+          <div>
+            <h2 className="text-xl font-semibold mt-6">Suggestions</h2>
+            <p className="text-gray-300">{suggestions || 'No suggestions provided.'}</p>
+          </div>
+        
+      </div>
+      </div>
     </div>
   )
 }

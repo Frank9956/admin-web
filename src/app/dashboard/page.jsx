@@ -15,6 +15,15 @@ import {
 import Link from 'next/link'
 import { sendCustomDeliveryNotification } from '@/lib/firebase/sendDeliveryNotification'
 import { sendCustomStoreNotification } from '@/lib/firebase/sendStoreNotification'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { ChevronDown } from "lucide-react"
+
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -246,24 +255,59 @@ export default function AdminDashboard() {
 
       {/* Buttons */}
       <div className="mb-8 flex flex-wrap gap-4">
-        <Link href="/dashboard/orders/new" className="bg-black text-white px-5 py-3 rounded hover:bg-gray-800">
+        <Link
+          href="/dashboard/orders/new"
+          className="bg-black text-white px-5 py-3 rounded hover:bg-gray-800"
+        >
           + Add New Order
         </Link>
-        <Link href="/dashboard/orders" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
+
+        <Link
+          href="/dashboard/orders"
+          className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900"
+        >
           View All Orders
         </Link>
-        <Link href="/dashboard/customers" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
-          View All Customers
-        </Link>
-        <Link href="/dashboard/users" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
-          View All Users
-        </Link>
-        <Link href="/dashboard/invoice" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
+
+        <Link
+          href="/dashboard/invoice"
+          className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900"
+        >
           Invoice
         </Link>
-        <Link href="/dashboard/catalog" className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900">
-          Catalog
+
+        <Link
+          href="/dashboard/recivedOrder"
+          className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900"
+        >
+          Recived Order
         </Link>
+
+        {/* Dropdown for extra links */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="bg-gray-700 text-white px-15 py-6 rounded hover:bg-gray-900 flex items-center">
+              More <ChevronDown className="ml-10 h-6 w-6" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-gray-800 text-white rounded-lg p-2">
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/customers">View All Customers</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/users">View All Users</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/catalog">Catalog</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/coupons">Coupons</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/announcements">Announcements</Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Active Orders */}
@@ -346,16 +390,16 @@ const OrderCard = ({ order, statuses, updateStatus, showImageIds, setShowImageId
     <p className="mt-4">
       <strong>Status:</strong>{' '}
       <span className={`inline-block px-3 py-1 rounded text-sm font-semibold capitalize ${order.status === 'pending'
-          ? 'bg-yellow-500 text-black'
-          : order.status === 'packed'
-            ? 'bg-blue-600 text-white'
-            : order.status === 'not packed'
-              ? 'bg-red-600 text-white'
-              : order.status === 'out for delivery'
-                ? 'bg-orange-500 text-black'
-                : order.status === 'delivered'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-600 text-white'
+        ? 'bg-yellow-500 text-black'
+        : order.status === 'packed'
+          ? 'bg-blue-600 text-white'
+          : order.status === 'not packed'
+            ? 'bg-red-600 text-white'
+            : order.status === 'out for delivery'
+              ? 'bg-orange-500 text-black'
+              : order.status === 'delivered'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-600 text-white'
         }`}>
         {order.status}
       </span>
