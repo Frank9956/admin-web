@@ -17,7 +17,7 @@ import {
     arrayUnion,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { FaTrash, FaEdit, FaChevronDown } from 'react-icons/fa'
+import { FaTrash, FaEdit, FaChevronDown, FaFilePdf  } from 'react-icons/fa'
 
 export default function OrdersListPage() {
     const router = useRouter()
@@ -184,6 +184,11 @@ export default function OrdersListPage() {
         setExpandedHistory((prev) => ({ ...prev, [id]: !prev[id] }))
     }
 
+    const goToInvoice = (orderId) => {
+        // redirect with orderId as query param
+        router.push(`/dashboard/invoice?orderId=${orderId}`);
+      };
+
     const deleteOrder = async (orderId) => {
         if (confirm('Are you sure you want to delete this order?')) {
             try {
@@ -304,6 +309,13 @@ export default function OrdersListPage() {
                             className="relative border border-gray-700 rounded-lg p-6 shadow bg-gray-800"
                         >
                             <div className="absolute top-3 right-3 flex space-x-3">
+                                <button
+                                    onClick={() => goToInvoice(order.id)}
+                                    title="Delete Order"
+                                    className="p-2 rounded bg-red-600 hover:bg-red-700 transition text-white"
+                                >
+                                    <FaFilePdf />
+                                </button>
                                 <button
                                     onClick={() => startEdit(order)}
                                     title="Edit Order"
