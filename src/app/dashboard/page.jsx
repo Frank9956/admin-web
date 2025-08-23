@@ -268,20 +268,21 @@ export default function AdminDashboard() {
         >
           View All Orders
         </Link>
-
-        <Link
-          href="/dashboard/invoice"
-          className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900"
-        >
-          Invoice
-        </Link>
-
+        
         <Link
           href="/dashboard/recivedOrder"
           className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900"
         >
           Recived Order
         </Link>
+
+        <Link
+          href="/dashboard/catalog"
+          className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900"
+        >
+          Catalog
+        </Link>
+
 
         {/* Dropdown for extra links */}
         <DropdownMenu>
@@ -298,7 +299,7 @@ export default function AdminDashboard() {
               <Link href="/dashboard/users">View All Users</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/catalog">Catalog</Link>
+              <Link href="/dashboard/invoice">Invoice</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/dashboard/coupons">Coupons</Link>

@@ -33,7 +33,7 @@ export default function CatalogAdminPage() {
       setSelectedCategory(data[0].name);
     }
   };
-  
+
 
   const fetchProducts = async () => {
     const snapshot = await getDocs(collection(db, 'products'));
@@ -42,7 +42,7 @@ export default function CatalogAdminPage() {
     data.sort((a, b) => a.name.localeCompare(b.name));
     setProducts(data);
   };
-  
+
   useEffect(() => {
     fetchCategories();
     fetchProducts();
@@ -218,30 +218,68 @@ export default function CatalogAdminPage() {
           .map(product => (
             <div
               key={product.id}
-              className="bg-gray-800 p-2 rounded shadow w-full max-w-[200px] flex flex-col"
+              className="bg-gray-800 p-2 rounded shadow w-full max-w-[200px] flex flex-col min-h-[320px]"
             >
-              <div className="w-full aspect-square bg-gray-700 rounded flex items-center justify-center mb-2">
-                <img src={product.image} alt={product.name} className="w-full h-full object-contain rounded" />
+              {/* Image */}
+              <div className="w-full aspect-square bg-gray-700 rounded mb-2 overflow-hidden relative">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+
+                {/* Copy button overlay */}
+                <button
+                  className="absolute top-2 right-2 bg-yellow-600 bg-opacity-70 text-xl px-2 py-1 font-bold rounded hover:bg-yellow-700"
+                  onClick={() => {
+                    navigator.clipboard.writeText(product.id);
+                    alert("Document ID copied to clipboard!");
+                  }}
+                >
+                  Copy
+                </button>
               </div>
-              <div className="bg-gray-900 p-2 rounded flex items-center justify-between">
+
+              {/* Details */}
+              <div className="bg-gray-900 p-2 rounded flex flex-col justify-between flex-1">
                 <div className="flex flex-col text-left">
                   <h3 className="font-bold text-base line-clamp-2">{product.name}</h3>
                   <p className="text-sm text-gray-400">{product.weight}</p>
                   <p className="font-semibold text-green-300 text-base">₹{product.price}</p>
                   <p className="text-xs text-gray-400">Stock: {product.stock ?? 0}</p>
-                  {product.recommended && <span className="text-xs text-yellow-400">⭐ Recommended</span>}
+                  {product.recommended && (
+                    <span className="text-xs text-yellow-400">⭐ Recommended</span>
+                  )}
+
+                  {/* Document ID + Copy */}
+                  {/* <div className="flex items-center space-x-2 mt-1">
+                    <p className="text-[10px] text-gray-500 truncate max-w-[100px]">
+                      {product.id}
+                    </p>
+                    <button
+                      className="text-xs bg-gray-700 px-2 py-0.5 rounded hover:bg-gray-600"
+                      onClick={() => {
+                        navigator.clipboard.writeText(product.id);
+                        alert("Document ID copied to clipboard!");
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </div> */}
                 </div>
-                <div className="flex flex-col space-y-1">
+
+                {/* Action buttons at bottom */}
+                <div className="flex space-x-1 mt-2">
                   <button
-                    className="bg-green-600 p-1 rounded flex items-center justify-center"
-                    onClick={() => handleEdit('product', product)}
+                    className="bg-green-600 p-1 rounded flex items-center justify-center flex-1"
+                    onClick={() => handleEdit("product", product)}
                     title="Edit"
                   >
                     <FiEdit size={20} />
                   </button>
                   <button
-                    className="bg-red-600 p-1 rounded flex items-center justify-center"
-                    onClick={() => handleDelete('product', product.id)}
+                    className="bg-red-600 p-1 rounded flex items-center justify-center flex-1"
+                    onClick={() => handleDelete("product", product.id)}
                     title="Delete"
                   >
                     <FiTrash2 size={20} />
@@ -249,6 +287,7 @@ export default function CatalogAdminPage() {
                 </div>
               </div>
             </div>
+
           ))}
       </div>
 
