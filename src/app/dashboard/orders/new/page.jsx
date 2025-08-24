@@ -62,7 +62,8 @@ export default function NewOrderPage() {
     e.preventDefault()
     setLoading(true)
 
-    const orderId = `ORD-${uuidv4().slice(0, 6).toUpperCase()}`
+    const now = new Date();
+    const orderId = `ORD${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
     let groceryListImageUrl = ''
     let orderBillUrl = ''
     const customerPhone = form.phone
@@ -172,152 +173,152 @@ export default function NewOrderPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
 
-      <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
-        {/* Phone input with customer autofill */}
-        <input
-          name="phone"
-          placeholder="Phone Number"
-          value={form.phone}
-          onChange={handleChange}
-          onBlur={(e) => checkCustomerByPhone(e.target.value)}
-          required
-          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-        />
-
-        {/* Customer Name + Address */}
-        <input
-          name="customerName"
-          placeholder="Customer Name"
-          value={form.customerName}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-        />
-        <input
-          name="address"
-          placeholder="Address"
-          value={form.address}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-        />
-
-        <input
-          name="mapLink"
-          placeholder="Google Map Link"
-          value={form.mapLink}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-        />
-
-        {/* Coupon Code */}
-        <input
-          name="couponCode"
-          placeholder="Coupon Code"
-          value={form.couponCode}
-          onChange={handleChange}
-          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-        />
-
-        {/* Address Type */}
-        <div>
-          <label className="block mb-2 font-semibold">Address Type:</label>
-          <select
-            name="addressType"
-            value={form.addressType}
+        <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
+          {/* Phone input with customer autofill */}
+          <input
+            name="phone"
+            placeholder="Phone Number"
+            value={form.phone}
             onChange={handleChange}
-            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100"
-          >
-            <option value="myself">Myself</option>
-            <option value="friends_family">Friends / Family</option>
-          </select>
-        </div>
+            onBlur={(e) => checkCustomerByPhone(e.target.value)}
+            required
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+          />
 
-        {/* Extra fields for friends/family */}
-        {form.addressType === 'friends_family' && (
-          <>
-            <input
-              name="friendFamilyName"
-              placeholder="Friend/Family Name"
-              value={form.friendFamilyName}
+          {/* Customer Name + Address */}
+          <input
+            name="customerName"
+            placeholder="Customer Name"
+            value={form.customerName}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+          />
+          <input
+            name="address"
+            placeholder="Address"
+            value={form.address}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+          />
+
+          <input
+            name="mapLink"
+            placeholder="Google Map Link"
+            value={form.mapLink}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+          />
+
+          {/* Coupon Code */}
+          <input
+            name="couponCode"
+            placeholder="Coupon Code"
+            value={form.couponCode}
+            onChange={handleChange}
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+          />
+
+          {/* Address Type */}
+          <div>
+            <label className="block mb-2 font-semibold">Address Type:</label>
+            <select
+              name="addressType"
+              value={form.addressType}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-            />
-            <input
-              name="friendFamilyPhone"
-              placeholder="Friend/Family Phone"
-              value={form.friendFamilyPhone}
-              onChange={handleChange}
-              className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-            />
-          </>
-        )}
-
-        {/* Delivery Type */}
-        <input
-          name="deliveryType"
-          placeholder="Delivery Type (e.g. Same Day, Express)"
-          value={form.deliveryType}
-          onChange={handleChange}
-          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-        />
-
-        {/* Store + Delivery Partner IDs */}
-        <input
-          name="storeId"
-          placeholder="Store User ID"
-          value={form.storeId}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-        />
-        <input
-          name="deliveryPartnerId"
-          placeholder="Delivery Partner ID"
-          value={form.deliveryPartnerId}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-        />
-
-        {/* File Uploads */}
-        <div>
-          <label className="block mb-2 font-semibold">Grocery List Photo:</label>
-          <div className="flex items-center gap-4">
-            <label htmlFor="file-upload" className="cursor-pointer bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white font-medium select-none transition">
-              Choose File
-            </label>
-            <input id="file-upload" type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} className="hidden" />
-            <span className="text-gray-300 italic">{imageFile ? imageFile.name : 'No file chosen'}</span>
+              className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100"
+            >
+              <option value="myself">Myself</option>
+              <option value="friends_family">Friends / Family</option>
+            </select>
           </div>
-        </div>
 
-        <div>
-          <label className="block mb-2 font-semibold">Order Bill (optional):</label>
-          <div className="flex items-center gap-4">
-            <label htmlFor="bill-upload" className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-white font-medium select-none transition">
-              Choose File
-            </label>
-            <input id="bill-upload" type="file" accept="application/pdf" onChange={(e) => setBillFile(e.target.files?.[0] || null)} className="hidden" />
-            <span className="text-gray-300 italic">{billFile ? billFile.name : 'No file chosen'}</span>
+          {/* Extra fields for friends/family */}
+          {form.addressType === 'friends_family' && (
+            <>
+              <input
+                name="friendFamilyName"
+                placeholder="Friend/Family Name"
+                value={form.friendFamilyName}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+              />
+              <input
+                name="friendFamilyPhone"
+                placeholder="Friend/Family Phone"
+                value={form.friendFamilyPhone}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+              />
+            </>
+          )}
+
+          {/* Delivery Type */}
+          <input
+            name="deliveryType"
+            placeholder="Delivery Type (e.g. Same Day, Express)"
+            value={form.deliveryType}
+            onChange={handleChange}
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+          />
+
+          {/* Store + Delivery Partner IDs */}
+          <input
+            name="storeId"
+            placeholder="Store User ID"
+            value={form.storeId}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+          />
+          <input
+            name="deliveryPartnerId"
+            placeholder="Delivery Partner ID"
+            value={form.deliveryPartnerId}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+          />
+
+          {/* File Uploads */}
+          <div>
+            <label className="block mb-2 font-semibold">Grocery List Photo:</label>
+            <div className="flex items-center gap-4">
+              <label htmlFor="file-upload" className="cursor-pointer bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white font-medium select-none transition">
+                Choose File
+              </label>
+              <input id="file-upload" type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} className="hidden" />
+              <span className="text-gray-300 italic">{imageFile ? imageFile.name : 'No file chosen'}</span>
+            </div>
           </div>
-        </div>
 
-        {/* Submit + Cancel */}
-        <div className="flex gap-4 mt-6">
-          <button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700 transition px-6 py-2 rounded font-semibold disabled:opacity-50">
-            {loading ? 'Submitting...' : 'Add Order'}
-          </button>
+          <div>
+            <label className="block mb-2 font-semibold">Order Bill (optional):</label>
+            <div className="flex items-center gap-4">
+              <label htmlFor="bill-upload" className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-white font-medium select-none transition">
+                Choose File
+              </label>
+              <input id="bill-upload" type="file" accept="application/pdf" onChange={(e) => setBillFile(e.target.files?.[0] || null)} className="hidden" />
+              <span className="text-gray-300 italic">{billFile ? billFile.name : 'No file chosen'}</span>
+            </div>
+          </div>
 
-          <button type="button" onClick={() => router.back()} className="bg-gray-700 hover:bg-gray-800 transition px-6 py-2 rounded font-semibold">
-            Cancel
-          </button>
-        </div>
-      </form>
+          {/* Submit + Cancel */}
+          <div className="flex gap-4 mt-6">
+            <button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700 transition px-6 py-2 rounded font-semibold disabled:opacity-50">
+              {loading ? 'Submitting...' : 'Add Order'}
+            </button>
 
-      {/* Right Side: Product List + suggestions */}
-      <div className="bg-gray-800 p-6 rounded space-y-4">
+            <button type="button" onClick={() => router.back()} className="bg-gray-700 hover:bg-gray-800 transition px-6 py-2 rounded font-semibold">
+              Cancel
+            </button>
+          </div>
+        </form>
+
+        {/* Right Side: Product List + suggestions */}
+        <div className="bg-gray-800 p-6 rounded space-y-4">
           <h2 className="text-xl font-semibold">Products</h2>
           {productList.length > 0 ? (
             <ul className="space-y-2">
@@ -336,8 +337,8 @@ export default function NewOrderPage() {
             <h2 className="text-xl font-semibold mt-6">Suggestions</h2>
             <p className="text-gray-300">{suggestions || 'No suggestions provided.'}</p>
           </div>
-        
-      </div>
+
+        </div>
       </div>
     </div>
   )

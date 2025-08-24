@@ -88,7 +88,7 @@ export default function CatalogAdminPage() {
   };
 
   const handleSaveProduct = async () => {
-    const { name, image, price, weight, category, stock, recommended, productId } = formData;
+    const { name, image, price, mrp, weight, category, stock, recommended, productId } = formData;
     if (!name || !price || !weight || !category)
       return alert('All fields except image are required!');
 
@@ -97,6 +97,7 @@ export default function CatalogAdminPage() {
       name,
       image: image || defaultImage,
       price: parseFloat(price),
+      mrp: parseFloat(mrp),
       weight,
       category,
       stock: parseInt(stock) || 1,
@@ -159,7 +160,7 @@ export default function CatalogAdminPage() {
           Add Category
         </button>
       </div>
-      <div className="flex space-x-4 mb-8 hide-scrollbar whitespace-nowrap overflow-x-auto">
+      <div className="flex space-x-4 mb-8 whitespace-nowrap overflow-x-auto">
         {categories.map(cat => (
           <div
             key={cat.id}
@@ -246,6 +247,7 @@ export default function CatalogAdminPage() {
                   <h3 className="font-bold text-base line-clamp-2">{product.name}</h3>
                   <p className="text-sm text-gray-400">{product.weight}</p>
                   <p className="font-semibold text-green-300 text-base">₹{product.price}</p>
+                  <p className="font-semibold text-green-300 text-base">MRP: ₹{product.mrp}</p>
                   <p className="text-xs text-gray-400">Stock: {product.stock ?? 0}</p>
                   {product.recommended && (
                     <span className="text-xs text-yellow-400">⭐ Recommended</span>
@@ -362,6 +364,14 @@ export default function CatalogAdminPage() {
               type="number"
               placeholder="Price"
               value={formData.price || ''}
+              onChange={handleChange}
+              className="w-full mb-3 p-2 bg-gray-700 rounded"
+            />
+            <input
+              name="mrp"
+              type="number"
+              placeholder="MRP"
+              value={formData.mrp || ''}
               onChange={handleChange}
               className="w-full mb-3 p-2 bg-gray-700 rounded"
             />
