@@ -17,7 +17,9 @@ import {
     arrayUnion,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { FaTrash, FaEdit, FaChevronDown, FaFilePdf  } from 'react-icons/fa'
+import { FaTrash, FaEdit, FaChevronDown, FaFilePdf, FaCommentDots  } from 'react-icons/fa'
+import { sendFeedback } from '@/utils/whatsapp'
+
 
 export default function OrdersListPage() {
     const router = useRouter()
@@ -187,7 +189,7 @@ export default function OrdersListPage() {
     const goToInvoice = (orderId) => {
         // redirect with orderId as query param
         router.push(`/dashboard/invoice?orderId=${orderId}`);
-      };
+    };
 
     const deleteOrder = async (orderId) => {
         if (confirm('Are you sure you want to delete this order?')) {
@@ -329,6 +331,13 @@ export default function OrdersListPage() {
                                     className="p-2 rounded bg-red-600 hover:bg-red-700 transition text-white"
                                 >
                                     <FaTrash />
+                                </button>
+                                <button
+                                    onClick={() => sendFeedback(order)}
+                                    title="Feedback"
+                                    className="p-2 rounded bg-green-600 hover:bg-green-700 transition text-white"
+                                >
+                                    <FaCommentDots />
                                 </button>
                             </div>
 

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase/firebase'
-import { collection, getDocs, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
+import { sendOrderConfirmation } from '@/utils/whatsapp'
 
 
 export default function ReceivedOrdersPage() {
@@ -22,15 +23,15 @@ export default function ReceivedOrdersPage() {
   const fetchOrders = async () => {
     setLoading(true)
     try {
-      const orderSnap = await getDocs(collection(db, 'receivedOrder'))
+      const q = query(
+        collection(db, 'receivedOrder'),
+        orderBy('createdAt', 'desc')   // 👈 newest first
+      )
+      const orderSnap = await getDocs(q)
       const ordersData = []
-
       for (let orderDoc of orderSnap.docs) {
         const order = orderDoc.data()
-
-        // If productList already contains product objects (not just IDs)
         const products = Array.isArray(order.productList) ? order.productList : []
-
         ordersData.push({ id: orderDoc.id, ...order, productList: products })
       }
 
@@ -283,13 +284,13 @@ export default function ReceivedOrdersPage() {
                     onClick={() => handleCreateOrder(order)}
                     className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold"
                   >
-                    Create Order and Send Confirmation
+                    Create Order
                   </button>
                   <button
-                    onClick={() => console.log('TODO: reject order', order.id)}
+                    onClick={() => sendOrderConfirmation(order)}
                     className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-semibold"
                   >
-                    Reject Order
+                    Send Confirmation
                   </button>
                   <button
                     onClick={() => setEditingOrderId(order.id)}
