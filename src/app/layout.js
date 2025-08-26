@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Habit Us Admin",
-  description: "Admin Pannel for Habit Us",
+  title: "HabitUs Admin",
+  description: "Admin Pannel for HabitUs",
   icons: {
     icon: '/favicon.png', // or .png, .svg if you prefer
   },
