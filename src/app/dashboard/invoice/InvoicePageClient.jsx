@@ -16,17 +16,18 @@ const logoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAhwAAAIcCAYAAA
 
 
 export default function InvoicePage() {
-
+  
   const searchParams = useSearchParams();
   const orderIdFromQuery = searchParams.get("orderId");
-
+  
+  
   const formatDate = (date) => {
     const d = new Date(date);
     return `${String(d.getDate()).padStart(2, "0")}-${String(
       d.getMonth() + 1
     ).padStart(2, "0")}-${d.getFullYear()}`;
   };
-
+  
   const [order, setOrder] = useState({
     orderId: "",
     name: "",
@@ -37,8 +38,7 @@ export default function InvoicePage() {
     customerId: "",
     date: formatDate(new Date()),
   });
-
-
+  const [orderCount, setOrderCount] = useState(0);
 
   const [items, setItems] = useState([
     { description: "", quantity: 1, rate: 0 },
@@ -78,14 +78,16 @@ export default function InvoicePage() {
 
       // 🔹 Lookup customer by phone
       let customerId = "";
+      
       if (orderData.phone) {
         // documentId is same as phone
         const customerRef = doc(db, "customers", orderData.phone);
         const customerSnap = await getDoc(customerRef);
         if (customerSnap.exists()) {
           const fullCustomerId = customerSnap.data().customerId || "";
-          // only last 6 chars
-          customerId = fullCustomerId.slice(-6);
+          const fetchedOrderCount = customerSnap.data().orderCount || 0;
+          customerId = fullCustomerId.slice(-6); // last 6 chars
+          setOrderCount(fetchedOrderCount + 1); // +1 for current order
         }
       }
 
@@ -102,7 +104,7 @@ export default function InvoicePage() {
       // Fill products
       setItems(
         (orderData.productList || []).map((p) => ({
-          description: p.name,
+          description: p.name + ' (' + p.weight + ')',
           quantity: p.quantity,
           rate: p.price,
         }))
@@ -192,7 +194,7 @@ export default function InvoicePage() {
     setCharges([...charges, { label: "", amount: 0 }]);
   const removeCharge = (i) => {
     const label = charges[i].label.toLowerCase();
-    if (["delivery", "discount"].includes(label)) return;
+    if (["delivery"].includes(label)) return;
     setCharges(charges.filter((_, idx) => idx !== i));
   };
 
@@ -456,7 +458,7 @@ export default function InvoicePage() {
             </div>
           </div>
           <label>
-            Customer ID<br />
+            Customer ID (Order No: {orderCount})<br />
             <input
               name="customerId"
               value={order.customerId}
@@ -464,6 +466,7 @@ export default function InvoicePage() {
               className="input"
             />
           </label>
+
           <br />
           <label>
             Date<br />
@@ -573,7 +576,7 @@ export default function InvoicePage() {
           />
           <button
             onClick={() => removeCharge(i)}
-            disabled={["delivery", "discount"].includes(
+            disabled={["delivery"].includes(
               charge.label.toLowerCase()
             )}
             className="btn-danger"
