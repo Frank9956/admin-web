@@ -371,7 +371,7 @@ export default function CatalogAdminPage() {
               name="mrp"
               type="number"
               placeholder="MRP"
-              value={formData.mrp || ''}
+              value={formData.mrp || '0'}
               onChange={handleChange}
               className="w-full mb-3 p-2 bg-gray-700 rounded"
             />
@@ -386,7 +386,7 @@ export default function CatalogAdminPage() {
               name="stock"
               type="number"
               placeholder="Stock"
-              value={formData.stock || ''}
+              value={formData.stock || '1'}
               onChange={handleChange}
               className="w-full mb-3 p-2 bg-gray-700 rounded"
             />
