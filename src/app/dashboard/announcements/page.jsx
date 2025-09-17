@@ -84,7 +84,6 @@ export default function AnnouncementsPage() {
               placeholder="Coupon Code"
               value={form.coupon}
               onChange={handleChange}
-              required
               className="w-full px-4 py-2 rounded bg-gray-900 border border-gray-700 focus:ring-2 focus:ring-blue-500"
             />
             <input
@@ -107,6 +106,7 @@ export default function AnnouncementsPage() {
               name="image"
               placeholder="Image URL"
               value={form.image}
+              required
               onChange={handleChange}
               className="w-full px-4 py-2 rounded bg-gray-900 border border-gray-700 focus:ring-2 focus:ring-blue-500"
             />

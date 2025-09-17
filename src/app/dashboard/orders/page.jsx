@@ -17,7 +17,7 @@ import {
     arrayUnion,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { FaTrash, FaEdit, FaChevronDown, FaFilePdf, FaCommentDots  } from 'react-icons/fa'
+import { FaTrash, FaEdit, FaChevronDown, FaFilePdf, FaCommentDots } from 'react-icons/fa'
 import { sendFeedback } from '@/utils/whatsapp'
 
 
@@ -342,8 +342,24 @@ export default function OrdersListPage() {
                             </div>
 
                             <p className="mb-2">
-                                <strong>Order ID:</strong> {order.orderId}
+                                <strong>Order ID:</strong> {order.orderId}{' '}
+                                {order.deliveryType === 'Same Day' && (
+                                    <span className="bg-green-500 text-white px-2 py-1 rounded-md text-sm font-semibold">
+                                        Same Day
+                                    </span>
+                                )}
+                                {order.deliveryType === 'Super Saver' && (
+                                    <span className="bg-yellow-500 text-black px-2 py-1 rounded-md text-sm font-semibold">
+                                        Super Saver
+                                    </span>
+                                )}
+                                {order.deliveryType === 'Express' && (
+                                    <span className="bg-red-500 text-white px-2 py-1 rounded-md text-sm font-semibold">
+                                        Express
+                                    </span>
+                                )}
                             </p>
+
 
                             {editingId === order.id ? (
                                 <>
@@ -474,6 +490,11 @@ export default function OrdersListPage() {
                                     <p>
                                         <strong>Store ID:</strong> {order.storeId}
                                     </p>
+                                    {order.addressType === 'friends_family' && (
+                                        <p>
+                                            <strong>Deliver to:</strong> Friend/Family: {order.friendFamilyName} ({order.friendFamilyPhone})
+                                        </p>
+                                    )}
                                     <p>
                                         <strong>Delivery Partner ID:</strong> {order.deliveryPartnerId}
                                     </p>

@@ -227,7 +227,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-indigo-800 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-2">Packed Orders</h2>
+          <h2 className="text-xl font-semibold mb-2">Packed</h2>
           <p className="text-4xl font-bold">{countByStatus('packed')}</p>
         </div>
 
@@ -237,12 +237,12 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-yellow-600 rounded-lg p-6 shadow ">
-          <h2 className="text-xl font-semibold mb-2">Pending Orders</h2>
+          <h2 className="text-xl font-semibold mb-2">Pending</h2>
           <p className="text-4xl font-bold">{countByStatus('pending')}</p>
         </div>
 
         <div className="bg-red-800 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-2">Not Packed Orders</h2>
+          <h2 className="text-xl font-semibold mb-2">Not Packed</h2>
           <p className="text-4xl font-bold">{countByStatus('not packed')}</p>
         </div>
 
@@ -268,7 +268,7 @@ export default function AdminDashboard() {
         >
           View All Orders
         </Link>
-        
+
         <Link
           href="/dashboard/recivedOrder"
           className="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-900"
@@ -348,12 +348,34 @@ const StatCard = ({ title, count, color }) => (
 // Reusable Order Card Component
 const OrderCard = ({ order, statuses, updateStatus, showImageIds, setShowImageIds }) => (
   <div className="border rounded p-4 shadow bg-gray-800 text-gray-100">
-    <p><strong>Order ID:</strong> {order.orderId}</p>
+    <p className="mb-2">
+      <strong>Order ID:</strong> {order.orderId}{' '}
+      {order.deliveryType === 'Same Day' && (
+        <span className="bg-green-500 text-white px-2 py-1 rounded-md text-sm font-semibold">
+          Same Day
+        </span>
+      )}
+      {order.deliveryType === 'Super Saver' && (
+        <span className="bg-yellow-500 text-black px-2 py-1 rounded-md text-sm font-semibold">
+          Super Saver
+        </span>
+      )}
+      {order.deliveryType === 'Express' && (
+        <span className="bg-red-500 text-white px-2 py-1 rounded-md text-sm font-semibold">
+          Express
+        </span>
+      )}
+    </p>
     <p><strong>Customer:</strong> {order.customerName}</p>
     <p><strong>Address:</strong> {order.address}</p>
     <p>
       <strong>Phone:</strong> <a href={`tel:${order.phone}`} className="text-blue-400 underline">{order.phone}</a>
     </p>
+    {order.addressType === 'friends_family' && (
+      <p>
+        <strong>Deliver to Friend/Family:</strong>  {order.friendFamilyName} ({order.friendFamilyPhone})
+      </p>
+    )}
     <p><strong>Store ID:</strong> {order.storeId || 'N/A'}</p>
     <p><strong>Delivery Partner ID:</strong> {order.deliveryPartnerId || 'N/A'}</p>
     {order.mapLink && (
