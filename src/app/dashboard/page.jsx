@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
-
+import OrderNotifier from './OrderNotifier';
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -39,6 +39,7 @@ export default function AdminDashboard() {
   const [sending, setSending] = useState(false)
 
   const statuses = ['pending', 'packed', 'not packed', 'out for delivery', 'delivered']
+
 
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin')
@@ -149,6 +150,7 @@ export default function AdminDashboard() {
   return (
     <div className="p-8 mx-auto font-sans bg-gray-900 min-h-screen text-gray-100 relative">
       {/* Header with Notification Button */}
+      <OrderNotifier />
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <button
