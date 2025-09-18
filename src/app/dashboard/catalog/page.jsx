@@ -126,40 +126,25 @@ export default function CatalogAdminPage() {
   };
 
   // Delete
-  // const handleDelete = async (type, id) => {
-  //   const userInput = prompt(`Type "confirm" to delete this ${type}:`);
-  //   if (userInput && userInput.toLowerCase() === "confirm") {
-  //     try {
-  //       const ref = doc(db, type === 'category' ? 'categories' : 'products', id);
-  //       await deleteDoc(ref);
-  //       if (type === 'category') fetchCategories();
-  //       else fetchProducts();
-  //       alert(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully.`);
-  //     } catch (error) {
-  //       console.error("Error deleting:", error);
-  //       alert("Failed to delete. Please try again.");
-  //     }
-  //   } else {
-  //     alert("Deletion cancelled. You must type 'confirm' to proceed.");
-  //   }
-  // };
-
-
   const handleDelete = async (type, id) => {
-    const confirmed = confirm(`Are you sure you want to delete this ${type}?`);
-    if (!confirmed) return;
-  
-    try {
-      const ref = doc(db, type === 'category' ? 'categories' : 'products', id);
-      await deleteDoc(ref);
-      if (type === 'category') fetchCategories();
-      else fetchProducts();
-      alert(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully.`);
-    } catch (error) {
-      console.error("Error deleting:", error);
-      alert("Failed to delete. Please try again.");
+    const userInput = prompt(`Type "confirm" to delete this ${type}:`);
+    if (userInput && userInput.toLowerCase() === "confirm") {
+      try {
+        const ref = doc(db, type === 'category' ? 'categories' : 'products', id);
+        await deleteDoc(ref);
+        if (type === 'category') fetchCategories();
+        else fetchProducts();
+        alert(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully.`);
+      } catch (error) {
+        console.error("Error deleting:", error);
+        alert("Failed to delete. Please try again.");
+      }
+    } else {
+      alert("Deletion cancelled. You must type 'confirm' to proceed.");
     }
   };
+
+
   
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
