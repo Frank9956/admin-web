@@ -56,7 +56,7 @@ export default function AdminDashboard() {
     const interval = setInterval(() => {
       localStorage.removeItem('isAdmin')
       router.replace('/admin-login')
-    }, 600000)
+    }, 6000000)
     return () => clearInterval(interval)
   }, [authorized, router])
 
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
       {/* <OrderNotifier /> */}
 
 
-      
+
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <button
