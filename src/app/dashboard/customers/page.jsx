@@ -8,6 +8,8 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  query,
+  orderBy,
 } from 'firebase/firestore'
 import { FaTrash, FaEdit } from 'react-icons/fa'
 import Link from 'next/link'
@@ -25,7 +27,12 @@ export default function CustomersListPage() {
   const fetchCustomers = async () => {
     setLoading(true)
     try {
-      const snapshot = await getDocs(collection(db, 'customers'))
+      // order by timestamp (newest first)
+      const q = query(
+        collection(db, 'customers'),
+        orderBy('timestamp', 'desc')
+      )
+      const snapshot = await getDocs(q)
       const list = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -62,7 +69,10 @@ export default function CustomersListPage() {
   const saveEdit = async (phone) => {
     try {
       const ref = doc(db, 'customers', phone)
-      await updateDoc(ref, editForm)
+      await updateDoc(ref, {
+        ...editForm,
+        updatedAt: new Date(), // keep track of edits too
+      })
       setCustomers((prev) =>
         prev.map((c) => (c.id === phone ? { ...c, ...editForm } : c))
       )
@@ -95,7 +105,11 @@ export default function CustomersListPage() {
         </ol>
       </nav>
 
-      <h1 className="text-3xl font-bold mb-6">Customer List</h1>
+      <h1 className="text-3xl font-bold mb-6">Customer List  
+        <span className="text-lg font-normal text-gray-400 ml-2">
+        ({customers.length})
+      </span>
+      </h1>
 
       {loading ? (
         <p>Loading customers...</p>
@@ -166,6 +180,9 @@ export default function CustomersListPage() {
                   <p><strong>Customer ID:</strong> {customer.customerId}</p>
                   <p><strong>Orders:</strong> {customer.orderCount || 0}</p>
                   <p><strong>Referral ID:</strong> {customer.referralId || 0}</p>
+                  {customer.createdAt && (
+                    <p><strong>Created:</strong> {customer.createdAt.toDate().toLocaleString()}</p>
+                  )}
                   {customer.mapLink && (
                     <p>
                       <strong>Map Link:</strong>{' '}
