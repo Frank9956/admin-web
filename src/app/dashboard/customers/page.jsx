@@ -13,6 +13,8 @@ import {
 } from 'firebase/firestore'
 import { FaTrash, FaEdit } from 'react-icons/fa'
 import Link from 'next/link'
+import * as XLSX from "xlsx"
+import { saveAs } from "file-saver"
 
 export default function CustomersListPage() {
   const [customers, setCustomers] = useState([])
@@ -93,6 +95,29 @@ export default function CustomersListPage() {
     }
   }
 
+  const exportToExcel = () => {
+    // extract only name & phone
+    const data = customers.map((c) => ({
+      Name: c.name || "",
+      Phone: c.phone || "",
+    }))
+
+    // create worksheet & workbook
+    const worksheet = XLSX.utils.json_to_sheet(data)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customers")
+
+    // generate buffer
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" })
+
+    // save as file
+    const file = new Blob([excelBuffer], {
+      type:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+    })
+    saveAs(file, `customers_${Date.now()}.xlsx`)
+  }
+
   return (
     <div className="p-8 bg-gray-900 min-h-screen text-white">
       <nav className="mb-6 text-sm text-gray-400">
@@ -105,11 +130,18 @@ export default function CustomersListPage() {
         </ol>
       </nav>
 
-      <h1 className="text-3xl font-bold mb-6">Customer List  
+      <h1 className="text-3xl font-bold mb-6">Customer List
         <span className="text-lg font-normal text-gray-400 ml-2">
-        ({customers.length})
-      </span>
+          ({customers.length})
+        </span>
       </h1>
+
+      <button
+        onClick={exportToExcel}
+        className="mb-4 bg-blue-600 px-4 py-2 rounded text-white"
+      >
+        Export to Excel
+      </button>
 
       {loading ? (
         <p>Loading customers...</p>
