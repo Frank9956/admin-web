@@ -49,8 +49,6 @@ export default function NewOrderPage() {
       const customer = customerSnap.data()
       setForm((prev) => ({
         ...prev,
-        customerName: customer.name,
-        address: customer.address,
         mapLink: customer.mapLink,
       }))
     } else {
@@ -203,14 +201,24 @@ export default function NewOrderPage() {
             className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
           />
 
-          <input
-            name="mapLink"
-            placeholder="Google Map Link"
-            value={form.mapLink}
-            onChange={handleChange}
-           
-            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-          />
+          <div className="flex gap-2">
+            <input
+              name="mapLink"
+              placeholder="Google Map Link"
+              value={form.mapLink}
+              onChange={handleChange}
+
+              className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
+            />
+
+            <button
+              type="button" // prevent form submit
+              onClick={() => checkCustomerByPhone(form.phone)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Check
+            </button>
+          </div>
 
           {/* Coupon Code */}
           <input
@@ -324,8 +332,8 @@ export default function NewOrderPage() {
             <ul className="space-y-2">
               {productList.map((p, idx) => (
                 <li key={idx} className="flex justify-between border-b border-gray-600 pb-2">
-                  <span>{p.name} - {p.weight} - ₹{p.price} × {p.quantity}</span>
-                  <span className="font-bold">₹{p.total}</span>
+                  <span>{p.name} - {p.weight} | No. of Units = {p.quantity}</span>
+                  <span className="font-bold">₹{p.price} × {p.quantity}</span>
                 </li>
               ))}
             </ul>

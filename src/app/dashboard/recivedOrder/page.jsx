@@ -83,7 +83,7 @@ export default function ReceivedOrdersPage() {
       customerName: orderData.name || '',
       phone: orderData.phone || '',
       address: orderData.address || '',
-      mapLink: orderData.mapLink || '.',
+      mapLink: orderData.mapLink || '',
       storeId: orderData.storeId || '',
       deliveryPartnerId: orderData.deliveryPartnerId || '',
       couponCode: orderData.couponCode || '',
