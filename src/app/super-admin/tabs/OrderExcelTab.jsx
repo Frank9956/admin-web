@@ -40,7 +40,7 @@ export default function OrderExcelTab({ refreshKey }) {
       Address: o.address || 'N/A',
       Amount: o.paidAmount ? `₹${o.paidAmount}` : '₹0',
       'Delivery Charges': o.deliveryCharges ? `₹${o.deliveryCharges}` : '₹0',
-      'Total Discount': o.totalDiscount ? `₹${o.totalDiscount}` : '₹0',
+      'Total Purchase': o.purchaseAmount ? `₹${o.purchaseAmount}` : '₹0',
       'Payment Method': o.payment || 'N/A',
       Status: o.status || 'N/A',
       'Bill PDF': o.orderBillUrl
@@ -86,9 +86,9 @@ export default function OrderExcelTab({ refreshKey }) {
                 <th className="px-4 py-3 border border-gray-600">Created At</th>
                 <th className="px-4 py-3 border border-gray-600">Order ID</th>
                 <th className="px-4 py-3 border border-gray-600">Address</th>
-                <th className="px-4 py-3 border border-gray-600">Amount</th>
+                <th className="px-4 py-3 border border-gray-600"> Paid Amount</th>
                 <th className="px-4 py-3 border border-gray-600">Delivery Charges</th>
-                <th className="px-4 py-3 border border-gray-600">Total Discount</th>
+                <th className="px-4 py-3 border border-gray-600">Total Purchase</th>
                 <th className="px-4 py-3 border border-gray-600">Payment Method</th>
                 <th className="px-4 py-3 border border-gray-600">Status</th>
                 <th className="px-4 py-3 border border-gray-600">Bill PDF</th>
@@ -113,7 +113,7 @@ export default function OrderExcelTab({ refreshKey }) {
                     {order.deliveryCharges ? `₹${order.deliveryCharges}` : '₹0'}
                   </td>
                   <td className="px-4 py-2 border border-gray-600">
-                    {order.totalDiscount ? `₹${order.totalDiscount}` : '₹0'}
+                    {order.purchaseAmount ? `₹${order.purchaseAmount}` : '₹0'}
                   </td>
                   <td className="px-4 py-2 border border-gray-600">{order.payment || 'N/A'}</td>
                   <td className="px-4 py-2 border border-gray-600 capitalize">{order.status || 'N/A'}</td>

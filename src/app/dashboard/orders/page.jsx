@@ -103,7 +103,7 @@ export default function OrdersListPage() {
             storeId: order.storeId || '',
             deliveryPartnerId: order.deliveryPartnerId || '',
             deliveryCharges: order.deliveryCharges || '',
-            totalDiscount: order.totalDiscount || '',
+            purchaseAmount: order.purchaseAmount || '',
             paidAmount: order.paidAmount || '',
             mapLink: order.mapLink || '',
         })
@@ -313,7 +313,7 @@ export default function OrdersListPage() {
                             <div className="absolute top-3 right-3 flex space-x-3">
                                 <button
                                     onClick={() => goToInvoice(order.id)}
-                                    title="Delete Order"
+                                    title="Generate Invoice"
                                     className="p-2 rounded bg-red-600 hover:bg-red-700 transition text-white"
                                 >
                                     <FaFilePdf />
@@ -370,7 +370,7 @@ export default function OrdersListPage() {
                                         'phone',
                                         'storeId',
                                         'deliveryPartnerId',
-                                        'totalDiscount',
+                                        'purchaseAmount',
                                         'deliveryCharges',
                                         'paidAmount',
                                         'mapLink',

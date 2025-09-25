@@ -87,7 +87,7 @@ export default function InvoicePage() {
           const fullCustomerId = customerSnap.data().customerId || "";
           const fetchedOrderCount = customerSnap.data().orderCount || 0;
           customerId = fullCustomerId.slice(-6); // last 6 chars
-          setOrderCount(fetchedOrderCount + 1); // +1 for current order
+          setOrderCount(fetchedOrderCount );
         }
       }
 

@@ -68,10 +68,10 @@ export default function OrderAnalyticsTab() {
           last24hOrders: countOrders(ordersData, o => getDate(o) > dayAgo),
           last7dOrders: countOrders(ordersData, o => getDate(o) > weekAgo),
           last30dOrders: countOrders(ordersData, o => getDate(o) > monthAgo),
-          totalDiscount: reduceSum(ordersData, 'totalDiscount', () => true),
-          last24hDiscount: reduceSum(ordersData, 'totalDiscount', o => getDate(o) > dayAgo),
-          last7dDiscount: reduceSum(ordersData, 'totalDiscount', o => getDate(o) > weekAgo),
-          last30dDiscount: reduceSum(ordersData, 'totalDiscount', o => getDate(o) > monthAgo),
+          purchaseAmount: reduceSum(ordersData, 'purchaseAmount', () => true),
+          last24hPurchase: reduceSum(ordersData, 'purchaseAmount', o => getDate(o) > dayAgo),
+          last7dPurchase: reduceSum(ordersData, 'purchaseAmount', o => getDate(o) > weekAgo),
+          last30dPurchase: reduceSum(ordersData, 'purchaseAmount', o => getDate(o) > monthAgo),
           deliveryCharges: reduceSum(ordersData, 'deliveryCharges', () => true),
           last24hDeliveryCharges: reduceSum(ordersData, 'deliveryCharges', o => getDate(o) > dayAgo),
           last7dDeliveryCharges: reduceSum(ordersData, 'deliveryCharges', o => getDate(o) > weekAgo),
@@ -109,7 +109,7 @@ export default function OrderAnalyticsTab() {
     setCustomStats({
       orders: filtered.length,
       revenue: reduceSum(filtered, 'paidAmount'),
-      discount: reduceSum(filtered, 'totalDiscount'),
+      Purchase: reduceSum(filtered, 'purchaseAmount'),
       deliveryCharges: reduceSum(filtered, 'deliveryCharges')
     });
   };
@@ -157,7 +157,7 @@ export default function OrderAnalyticsTab() {
           <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-6">
             <Card title="Filtered Orders" value={customStats.orders} className="bg-gray-700" />
             <Card title="Filtered Revenue" value={formatCurrency(customStats.revenue)} className="bg-green-700" />
-            <Card title="Filtered Discount" value={formatCurrency(customStats.discount)} className="bg-pink-700" />
+            <Card title="Filtered Purchase" value={formatCurrency(customStats.Purchase)} className="bg-pink-700" />
             <Card title="Filtered Delivery Charges" value={formatCurrency(customStats.deliveryCharges)} className="bg-orange-700" />
           </div>
         )}
@@ -193,12 +193,12 @@ export default function OrderAnalyticsTab() {
       </section>
 
       <section>
-        <h2 className="text-pink-400 text-xl font-semibold mb-4">Discount Offered</h2>
+        <h2 className="text-pink-400 text-xl font-semibold mb-4">Purchase Offered</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <Card title="Total Discount" value={formatCurrency(stats.totalDiscount)} className="bg-pink-700" />
-          <Card title="Last 24h" value={formatCurrency(stats.last24hDiscount)} className="bg-pink-600" />
-          <Card title="Last 7 Days" value={formatCurrency(stats.last7dDiscount)} className="bg-pink-500" />
-          <Card title="Last 30 Days" value={formatCurrency(stats.last30dDiscount)} className="bg-pink-400" />
+          <Card title="Total Purchase" value={formatCurrency(stats.purchaseAmount)} className="bg-pink-700" />
+          <Card title="Last 24h" value={formatCurrency(stats.last24hPurchase)} className="bg-pink-600" />
+          <Card title="Last 7 Days" value={formatCurrency(stats.last7dPurchase)} className="bg-pink-500" />
+          <Card title="Last 30 Days" value={formatCurrency(stats.last30dPurchase)} className="bg-pink-400" />
         </div>
       </section>
 

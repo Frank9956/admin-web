@@ -19,7 +19,7 @@ export default function NewOrderPage() {
     customerName: '',
     address: '',
     phone: '',
-    mapLink: '.',
+    mapLink: '',
     storeId: '',
     deliveryPartnerId: '',
     couponCode: '',
@@ -208,7 +208,7 @@ export default function NewOrderPage() {
             placeholder="Google Map Link"
             value={form.mapLink}
             onChange={handleChange}
-            required
+           
             className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
           />
 
