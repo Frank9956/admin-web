@@ -217,7 +217,7 @@ export default function ReceivedOrdersPage() {
                 {/* ✅ Status Radio Buttons */}
                 <div className="flex flex-col items-end space-y-2 mt-5">
                   <h3 className="font-semibold mb-1">Status:</h3>
-                  {['Processing', 'Out for Delivery', 'Delivered'].map((status) => (
+                  {['processing', 'out for delivery', 'delivered'].map((status) => (
                     <label key={status} className="flex items-center gap-2">
                       <input
                         type="radio"
