@@ -2,20 +2,27 @@
 
 import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase/firebase'
-import { collection, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore'
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+} from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { sendOrderConfirmation } from '@/utils/whatsapp'
-
 
 export default function ReceivedOrdersPage() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [editingOrderId, setEditingOrderId] = useState(null)
+  const [billLinks, setBillLinks] = useState({})
 
   const router = useRouter()
 
-
-  // For adding new product
   const [newProductId, setNewProductId] = useState('')
   const [newProductDetails, setNewProductDetails] = useState(null)
   const [newQuantity, setNewQuantity] = useState(1)
@@ -23,10 +30,7 @@ export default function ReceivedOrdersPage() {
   const fetchOrders = async () => {
     setLoading(true)
     try {
-      const q = query(
-        collection(db, 'receivedOrder'),
-        orderBy('createdAt', 'desc')   // 👈 newest first
-      )
+      const q = query(collection(db, 'receivedOrder'), orderBy('createdAt', 'desc'))
       const orderSnap = await getDocs(q)
       const ordersData = []
       for (let orderDoc of orderSnap.docs) {
@@ -34,7 +38,6 @@ export default function ReceivedOrdersPage() {
         const products = Array.isArray(order.productList) ? order.productList : []
         ordersData.push({ id: orderDoc.id, ...order, productList: products })
       }
-
       setOrders(ordersData)
     } catch (err) {
       console.error('Error fetching orders:', err)
@@ -57,7 +60,6 @@ export default function ReceivedOrdersPage() {
     if (!newProductId) return
     const productRef = doc(db, 'products', newProductId)
     const productSnap = await getDoc(productRef)
-
     if (productSnap.exists()) {
       const product = productSnap.data()
       setNewProductDetails({
@@ -74,11 +76,9 @@ export default function ReceivedOrdersPage() {
   }
 
   const handleCreateOrder = (order) => {
-    // Remove productList, totalPrice, createdAt
     const orderData = { ...order }
     delete orderData.createdAt
 
-    // Map customer fields
     const mappedData = {
       customerName: orderData.name || '',
       phone: orderData.phone || '',
@@ -91,16 +91,13 @@ export default function ReceivedOrdersPage() {
       friendFamilyName: orderData.friendFamilyName || '',
       friendFamilyPhone: orderData.friendFamilyPhone || '',
       deliveryType: orderData.deliveryType || '',
-      suggestions: orderData.suggestions || '',  // can come from firestore or you can fetch later
-
-      // 👇 NEW
+      suggestions: orderData.suggestions || '',
       productList: orderData.productList || [],
     }
 
     localStorage.setItem('newOrderData', JSON.stringify(mappedData))
     router.push('/dashboard/orders/new')
   }
-
 
   const handleAddProduct = (orderId) => {
     if (!newProductDetails || !newQuantity) return
@@ -128,7 +125,6 @@ export default function ReceivedOrdersPage() {
       })
     )
 
-    // reset input
     setNewProductId('')
     setNewProductDetails(null)
     setNewQuantity(1)
@@ -169,6 +165,22 @@ export default function ReceivedOrdersPage() {
     )
   }
 
+  // ✅ Update order status in Firestore
+  const handleStatusChange = async (orderId, status) => {
+    await updateDoc(doc(db, 'receivedOrder', orderId), { status })
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status } : o))
+    )
+  }
+
+  // ✅ Save Bill Receipt Link
+  const handleSaveBillLink = async (orderId) => {
+    const link = billLinks[orderId]
+    if (!link) return alert('Please enter a link first.')
+    await updateDoc(doc(db, 'receivedOrder', orderId), { billReceipt: link })
+    alert('Bill receipt link updated ✅')
+  }
+
   return (
     <div className="p-8 mx-auto font-sans bg-gray-900 min-h-screen text-gray-100">
       <h1 className="text-3xl font-bold mb-8">Received Orders</h1>
@@ -181,7 +193,6 @@ export default function ReceivedOrdersPage() {
         <div className="space-y-6">
           {orders.map((order) => (
             <div key={order.id} className="bg-gray-800 p-6 rounded shadow-md relative">
-              {/* Delete button top-right */}
               <button
                 onClick={() => handleDeleteOrder(order.id)}
                 className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm"
@@ -189,27 +200,64 @@ export default function ReceivedOrdersPage() {
                 Delete
               </button>
 
-              <h2 className="text-xl font-semibold mb-2">{order.name} ({order.phone})</h2>
-              <p className="text-gray-300">Address: {order.address}</p>
-              <p className="text-gray-300">Type: {order.addressType}</p>
-              <p className="text-gray-300">Delivery: {order.deliveryType}</p>
-              <p className="text-gray-300">Coupon: {order.couponCode || 'None'}</p>
-              <p className="text-gray-300">Total Price: ₹{order.totalPrice}</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">
+                    {order.name} ({order.phone})
+                  </h2>
+                  <p className="text-gray-300">Address: {order.address}</p>
+                  <p className="text-gray-300">Delivery: {order.deliveryType}</p>
+                  <p className="text-gray-300">Coupon: {order.couponCode || 'None'}</p>
+                  <p className="text-gray-300">Total Price: ₹{order.totalPrice}</p>
+                  <p className="text-gray-400 text-sm">
+                    Created At: {new Date(order.createdAt.seconds * 1000).toLocaleString()}
+                  </p>
+                </div>
 
-              {order.addressType === 'friends_family' && (
-                <>
-                  <p className="text-gray-300">Friend/Family Name: {order.friendFamilyName}</p>
-                  <p className="text-gray-300">Friend/Family Phone: {order.friendFamilyPhone}</p>
-                </>
-              )}
+                {/* ✅ Status Radio Buttons */}
+                <div className="flex flex-col items-end space-y-2 mt-5">
+                  <h3 className="font-semibold mb-1">Status:</h3>
+                  {['Processing', 'Out for Delivery', 'Delivered'].map((status) => (
+                    <label key={status} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name={`status-${order.id}`}
+                        value={status}
+                        checked={order.status === status}
+                        onChange={() => handleStatusChange(order.id, status)}
+                      />
+                      <span>{status}</span>
+                    </label>
+                  ))}
 
-              <p className="text-gray-400 text-sm">Created At: {new Date(order.createdAt.seconds * 1000).toLocaleString()}</p>
-              <p className="text-gray-300">Suggestions: {order.suggestions || 'None'}</p>
+                  {/* ✅ Bill Receipt Input */}
+                  <div className="mt-3 w-60">
+                    <input
+                      type="text"
+                      placeholder="Enter Bill Receipt Link"
+                      value={billLinks[order.id] || order.billReceipt || ''}
+                      onChange={(e) =>
+                        setBillLinks((prev) => ({
+                          ...prev,
+                          [order.id]: e.target.value,
+                        }))
+                      }
+                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded"
+                    />
+                    <button
+                      onClick={() => handleSaveBillLink(order.id)}
+                      className="mt-2 bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm"
+                    >
+                      Save Bill Link
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               {/* Product List */}
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Products:</h3>
-                {order.productList.length > 0 ? (
+                {order.productList?.length > 0 ? (
                   <ul className="list-disc ml-6 space-y-1">
                     {order.productList.map((p) => (
                       <li key={p.productId} className="flex justify-between items-center">
@@ -232,10 +280,9 @@ export default function ReceivedOrdersPage() {
                 )}
               </div>
 
-              {/* Edit section */}
+              {/* Action Buttons */}
               {editingOrderId === order.id ? (
                 <div className="mt-4 space-y-2">
-                  {/* Enter product ID */}
                   <input
                     type="text"
                     value={newProductId}
@@ -250,10 +297,12 @@ export default function ReceivedOrdersPage() {
                     Fetch Product
                   </button>
 
-                  {/* Show product details once fetched */}
                   {newProductDetails && (
                     <div className="bg-gray-700 p-3 rounded space-y-2">
-                      <p>{newProductDetails.name} - {newProductDetails.weight} - ₹{newProductDetails.price}</p>
+                      <p>
+                        {newProductDetails.name} - {newProductDetails.weight} - ₹
+                        {newProductDetails.price}
+                      </p>
                       <input
                         type="number"
                         min="1"
