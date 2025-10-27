@@ -515,6 +515,10 @@ export default function OrdersListPage() {
                                         </p>
                                     )}
 
+                                    {order.createdAt && (
+                                        <p><strong>Created:</strong> {order.createdAt.toDate().toLocaleString()}</p>
+                                    )}
+
                                     {/* Show grocery list image button if exists */}
                                     {order.groceryListImageUrl && (
                                         <button

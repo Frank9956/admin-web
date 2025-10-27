@@ -212,8 +212,8 @@ export default function CustomersListPage() {
                   <p><strong>Customer ID:</strong> {customer.customerId}</p>
                   <p><strong>Orders:</strong> {customer.orderCount || 0}</p>
                   <p><strong>Referral ID:</strong> {customer.referralId || 0}</p>
-                  {customer.createdAt && (
-                    <p><strong>Created:</strong> {customer.createdAt.toDate().toLocaleString()}</p>
+                  {customer.timestamp && (
+                    <p><strong>Created:</strong> {customer.timestamp.toDate().toLocaleString()}</p>
                   )}
                   {customer.mapLink && (
                     <p>

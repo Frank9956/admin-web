@@ -211,6 +211,7 @@ export default function ReceivedOrdersPage() {
                   <p className="text-gray-300">Total Price: ₹{order.totalPrice}</p>
                   <p className="text-gray-400 text-sm">
                     Created At: {new Date(order.createdAt.seconds * 1000).toLocaleString()}
+                  <p className="text-gray-300">Requirement: {order.suggestions || 'None'}</p>
                   </p>
                 </div>
 
